@@ -53,11 +53,10 @@ lib/
 - Mirrors the admin panel's conventions (`../admin/`) where they translate directly: a single
   auth store with a bare HTTP client for login/refresh/logout (so those calls can't recurse into
   the main client's 401 handling), and one API module per backend resource.
-- **Lesson completion**: the backend only exposes progress in aggregate
-  (`GET /progress/me`, `GET /progress/courses/{id}`) — it doesn't return per-lesson completion on
-  `GET /courses/{id}/lessons`. `LessonsApi.listForCourseWithProgress` derives it client-side by
-  checking each quiz's attempt history (`GET /quizzes/{id}/attempts`) for a passing attempt, since
-  that's the only way a lesson ever gets marked complete server-side.
+- **Lesson completion**: `GET /courses/{id}/lessons` and `GET /lessons/{id}` include a `completed`
+  flag per lesson for the current user, which `Lesson.fromJson` parses directly — no client-side
+  derivation needed. Sequential unlock (`CourseDetailScreen`) and the course-detail lesson stepper
+  are both built on that flag.
 - **Video**: streamed with `video_player` + `chewie` straight from the backend's Range-enabled
   `/media` endpoint, so seeking works with no extra client code.
 - **PDF/file lessons**: opened externally via `url_launcher` rather than an embedded viewer, to
@@ -70,6 +69,6 @@ lib/
 
 ## Verified
 
-- `flutter analyze` — clean (two informational deprecation notices only).
-- `flutter build web` — compiles successfully (web isn't a target platform for this app; this was
-  only used to smoke-test the Dart code without needing an Android/iOS emulator).
+- `flutter analyze` — clean.
+- `flutter build apk --debug` — compiles and installs cleanly. The shipped targets are Android/iOS;
+  `flutter build web` is not configured for this project.

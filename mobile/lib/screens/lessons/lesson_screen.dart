@@ -356,6 +356,7 @@ class _LessonScreenState extends State<LessonScreen> {
           ),
           const SizedBox(width: 14),
           FilledButton.icon(
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 52)),
             onPressed: () => context.push('/lessons/${lesson.id}/quiz'),
             icon: Icon(
               lesson.completed ? Icons.replay : Icons.quiz_outlined,
