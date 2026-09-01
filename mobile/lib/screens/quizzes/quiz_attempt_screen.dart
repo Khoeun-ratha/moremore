@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
 import '../../models/quiz.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
 import 'quiz_result_screen.dart';
 
@@ -49,8 +50,10 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
 
   @override
   Widget build(BuildContext context) {
+    late final Widget content;
     if (_loading) {
-      return Scaffold(
+      content = Scaffold(
+        key: const ValueKey('loading'),
         appBar: AppBar(
           title: const Text('Attempt Details'),
           leading: IconButton(
@@ -60,9 +63,9 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
-    }
-    if (_error != null) {
-      return Scaffold(
+    } else if (_error != null) {
+      content = Scaffold(
+        key: const ValueKey('error'),
         appBar: AppBar(
           title: const Text('Attempt Details'),
           leading: IconButton(
@@ -72,7 +75,19 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
         ),
         body: ErrorView(message: _error!, onRetry: _load),
       );
+    } else {
+      content = QuizResultScreen(
+        key: const ValueKey('result'),
+        result: _result!,
+        isHistorical: true,
+      );
     }
-    return QuizResultScreen(result: _result!, isHistorical: true);
+
+    return AnimatedSwitcher(
+      duration: AppMotion.fast,
+      switchInCurve: AppMotion.curve,
+      switchOutCurve: AppMotion.curve,
+      child: content,
+    );
   }
 }

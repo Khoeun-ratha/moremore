@@ -1,5 +1,20 @@
 import 'package:flutter/material.dart';
 
+/// Shared animation timing so every screen transition, loading fade, and
+/// micro-interaction in the app moves at the same speed — one "standard"
+/// feel instead of each screen picking its own.
+class AppMotion {
+  AppMotion._();
+
+  /// Screen-to-screen route transitions.
+  static const routeDuration = Duration(milliseconds: 300);
+
+  /// Loading-state -> content fades, list item entrances, small UI reveals.
+  static const fast = Duration(milliseconds: 220);
+
+  static const curve = Curves.easeOutCubic;
+}
+
 /// Light, purple-accented palette used across the app (lesson player, quiz,
 /// quiz results, and the rest of the shell).
 class AppColors {

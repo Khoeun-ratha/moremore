@@ -21,6 +21,7 @@ import '../screens/quizzes/quiz_result_screen.dart';
 import '../screens/quizzes/quiz_screen.dart';
 import '../screens/shell/home_shell.dart';
 import '../state/auth_store.dart';
+import 'app_page_transition.dart';
 
 GoRouter buildAppRouter(AuthStore authStore) {
   return GoRouter(
@@ -42,15 +43,28 @@ GoRouter buildAppRouter(AuthStore authStore) {
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) =>
+            buildPageWithTransition(state: state, child: const LoginScreen()),
+      ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const RegisterScreen(),
+        ),
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (context, state) => const ForgotPasswordScreen(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const ForgotPasswordScreen(),
+        ),
       ),
+      // The four tab routes below are switched via IndexedStack inside HomeShell,
+      // not pushed — they intentionally have no page transition of their own so
+      // tapping a bottom-nav tab feels instant, matching standard tab-bar UX.
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             HomeShell(navigationShell: navigationShell),
@@ -91,58 +105,93 @@ GoRouter buildAppRouter(AuthStore authStore) {
       ),
       GoRoute(
         path: '/profile/edit',
-        builder: (context, state) => const EditProfileScreen(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const EditProfileScreen(),
+        ),
       ),
       GoRoute(
         path: '/profile/change-password',
-        builder: (context, state) => const ChangePasswordScreen(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const ChangePasswordScreen(),
+        ),
       ),
       GoRoute(
         path: '/profile/certificates',
-        builder: (context, state) => const MyCertificatesScreen(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const MyCertificatesScreen(),
+        ),
       ),
       GoRoute(
         path: '/profile/feedback',
-        builder: (context, state) => const FeedbackScreen(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const FeedbackScreen(),
+        ),
       ),
       GoRoute(
         path: '/profile/certificates/:id',
-        builder: (context, state) =>
-            CertificateDetailScreen(certificate: state.extra as Certificate),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: CertificateDetailScreen(
+            certificate: state.extra as Certificate,
+          ),
+        ),
       ),
       GoRoute(
         path: '/courses/:id',
-        builder: (context, state) => CourseDetailScreen(
-          courseId: int.parse(state.pathParameters['id']!),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: CourseDetailScreen(
+            courseId: int.parse(state.pathParameters['id']!),
+          ),
         ),
       ),
       GoRoute(
         path: '/lessons/:id',
-        builder: (context, state) =>
-            LessonScreen(lessonId: int.parse(state.pathParameters['id']!)),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: LessonScreen(lessonId: int.parse(state.pathParameters['id']!)),
+        ),
       ),
       GoRoute(
         path: '/lessons/:id/quiz',
-        builder: (context, state) =>
-            QuizScreen(lessonId: int.parse(state.pathParameters['id']!)),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: QuizScreen(lessonId: int.parse(state.pathParameters['id']!)),
+        ),
       ),
       GoRoute(
         path: '/quiz-result',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final args = state.extra as QuizResultArgs;
-          return QuizResultScreen(result: args.result, courseId: args.courseId);
+          return buildPageWithTransition(
+            state: state,
+            child: QuizResultScreen(
+              result: args.result,
+              courseId: args.courseId,
+            ),
+          );
         },
       ),
       GoRoute(
         path: '/quiz-attempts/:id',
-        builder: (context, state) => QuizAttemptScreen(
-          attemptId: int.parse(state.pathParameters['id']!),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: QuizAttemptScreen(
+            attemptId: int.parse(state.pathParameters['id']!),
+          ),
         ),
       ),
       GoRoute(
         path: '/certificate-celebration',
-        builder: (context, state) => CertificateCelebrationScreen(
-          certificate: state.extra as Certificate,
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: CertificateCelebrationScreen(
+            certificate: state.extra as Certificate,
+          ),
         ),
       ),
     ],

@@ -116,7 +116,12 @@ class _QuizScreenState extends State<QuizScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: _buildBody(),
+      body: AnimatedSwitcher(
+        duration: AppMotion.fast,
+        switchInCurve: AppMotion.curve,
+        switchOutCurve: AppMotion.curve,
+        child: _buildBody(),
+      ),
     );
   }
 

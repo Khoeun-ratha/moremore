@@ -213,7 +213,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   ],
                 ),
         ),
-        body: _buildBody(),
+        body: AnimatedSwitcher(
+          duration: AppMotion.fast,
+          switchInCurve: AppMotion.curve,
+          switchOutCurve: AppMotion.curve,
+          child: _buildBody(),
+        ),
       ),
     );
   }

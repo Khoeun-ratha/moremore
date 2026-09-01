@@ -150,7 +150,12 @@ class _LessonScreenState extends State<LessonScreen> {
                 ),
               ),
       ),
-      body: _buildBody(),
+      body: AnimatedSwitcher(
+        duration: AppMotion.fast,
+        switchInCurve: AppMotion.curve,
+        switchOutCurve: AppMotion.curve,
+        child: _buildBody(),
+      ),
       bottomNavigationBar: _buildBottomBar(),
     );
   }

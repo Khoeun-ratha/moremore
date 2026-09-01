@@ -45,7 +45,12 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Progress')),
-      body: _buildBody(),
+      body: AnimatedSwitcher(
+        duration: AppMotion.fast,
+        switchInCurve: AppMotion.curve,
+        switchOutCurve: AppMotion.curve,
+        child: _buildBody(),
+      ),
     );
   }
 

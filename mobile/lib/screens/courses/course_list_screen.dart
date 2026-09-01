@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
 import '../../models/course.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/course_card.dart';
 import '../../widgets/error_view.dart';
 
@@ -105,7 +106,12 @@ class _CourseListScreenState extends State<CourseListScreen> {
           ),
         ),
       ),
-      body: _buildBody(),
+      body: AnimatedSwitcher(
+        duration: AppMotion.fast,
+        switchInCurve: AppMotion.curve,
+        switchOutCurve: AppMotion.curve,
+        child: _buildBody(),
+      ),
     );
   }
 
