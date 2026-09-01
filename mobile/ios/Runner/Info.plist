@@ -30,6 +30,8 @@
 	<string>Used to take a photo for your profile picture.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Used to choose a photo for your profile picture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Used to save your course completion certificate.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

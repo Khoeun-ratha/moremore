@@ -5,16 +5,27 @@ import 'package:provider/provider.dart';
 import '../../models/certificate.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/certificate_export.dart';
 import '../../widgets/certificate_card.dart';
 
 /// Shown right after a learner finishes a course's last lesson — the
 /// in-flow celebration moment that a freshly-issued certificate otherwise
 /// never gets (previously it only surfaced later, buried in Profile ->
 /// My Certificates).
-class CertificateCelebrationScreen extends StatelessWidget {
+class CertificateCelebrationScreen extends StatefulWidget {
   const CertificateCelebrationScreen({super.key, required this.certificate});
 
   final Certificate certificate;
+
+  @override
+  State<CertificateCelebrationScreen> createState() =>
+      _CertificateCelebrationScreenState();
+}
+
+class _CertificateCelebrationScreenState
+    extends State<CertificateCelebrationScreen> {
+  final _boundaryKey = GlobalKey();
+  bool _saving = false;
 
   static const _confettiDots = [
     Offset(28, 28),
@@ -28,8 +39,19 @@ class CertificateCelebrationScreen extends StatelessWidget {
     Offset(340, 178),
   ];
 
+  Future<void> _download() async {
+    setState(() => _saving = true);
+    await saveWidgetToGallery(
+      boundaryKey: _boundaryKey,
+      context: context,
+      fileName: 'certificate_${widget.certificate.certificateNumber}',
+    );
+    if (mounted) setState(() => _saving = false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final certificate = widget.certificate;
     final learnerName = context.watch<AuthStore>().user?.fullName ?? '';
 
     return Scaffold(
@@ -104,50 +126,66 @@ class CertificateCelebrationScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.28),
-                            blurRadius: 32,
-                            offset: const Offset(0, 16),
-                          ),
-                        ],
-                      ),
-                      child: CertificateCard(
-                        certificate: certificate,
-                        learnerName: learnerName.isEmpty ? 'You' : learnerName,
+                    RepaintBoundary(
+                      key: _boundaryKey,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.28),
+                              blurRadius: 32,
+                              offset: const Offset(0, 16),
+                            ),
+                          ],
+                        ),
+                        child: CertificateCard(
+                          certificate: certificate,
+                          learnerName: learnerName.isEmpty
+                              ? 'You'
+                              : learnerName,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 26),
                     SizedBox(
                       width: double.infinity,
                       height: 52,
-                      child: FilledButton(
+                      child: FilledButton.icon(
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primaryHigh,
                         ),
-                        onPressed: () => context.go('/courses'),
-                        child: const Text('Continue Learning'),
+                        onPressed: _saving ? null : _download,
+                        icon: _saving
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryHigh,
+                                ),
+                              )
+                            : const Icon(Icons.download_outlined),
+                        label: Text(
+                          _saving ? 'Saving...' : 'Download Certificate',
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    TextButton(
-                      onPressed: () => context.push(
-                        '/profile/certificates/${certificate.id}',
-                        extra: certificate,
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text(
-                        'View Certificate Details',
-                        style: TextStyle(decoration: TextDecoration.underline),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white54),
+                        ),
+                        onPressed: () => context.go('/courses'),
+                        child: const Text('Continue Learning'),
                       ),
                     ),
                   ],
