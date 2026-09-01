@@ -76,8 +76,12 @@ course/overall progress is derived from it. See `../` plan doc or `app/models/` 
 5. `POST /api/v1/auth/logout` revokes a refresh token
 
 Admin-only endpoints (course/lesson/quiz CRUD, file upload, user management) require a user with
-`role=admin`. Promote a user by editing their role directly in the DB, or via
-`PATCH /api/v1/users/{id}` as an existing admin. There is no self-serve admin signup by design.
+`role=admin` or `role=super_admin`. Promote a user to `admin` by editing their role directly in the
+DB, or via `PATCH /api/v1/users/{id}` as an existing **super admin** — a regular admin can no longer
+grant/revoke the admin role, or edit, reset the password of, or delete an existing admin account
+(`app/api/v1/endpoints/users.py::_require_super_admin_for_admin_target`); this prevents one admin
+account from compromising or locking out another. There is no self-serve admin or super-admin
+signup by design — set the first `super_admin` directly in the DB, same as the first `admin` was.
 
 ## File uploads
 

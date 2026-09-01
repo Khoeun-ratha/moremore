@@ -9,12 +9,16 @@ export function getUser(id: number) {
   return http.get<User>(`/users/${id}`).then((r) => r.data)
 }
 
-export function updateUser(id: number, input: Partial<Pick<User, 'full_name' | 'is_active' | 'role'>>) {
+export function updateUser(id: number, input: Partial<Pick<User, 'full_name' | 'email' | 'is_active' | 'role'>>) {
   return http.patch<User>(`/users/${id}`, input).then((r) => r.data)
 }
 
 export function deleteUser(id: number) {
   return http.delete(`/users/${id}`)
+}
+
+export function resetUserPassword(id: number, newPassword: string) {
+  return http.post(`/users/${id}/reset-password`, { new_password: newPassword })
 }
 
 export function getUserProgress(id: number) {

@@ -184,6 +184,18 @@ def change_password(db: Session, user: User, current_password: str, new_password
     db.commit()
 
 
+def admin_set_password(db: Session, user: User, new_password: str) -> None:
+    """Admin-initiated password reset — no current-password check, since the
+    admin isn't the account owner. Revokes existing sessions like every other
+    password change, since the old password may have been compromised.
+    """
+    user.hashed_password = hash_password(new_password)
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == user.id, RefreshToken.revoked.is_(False)
+    ).update({"revoked": True})
+    db.commit()
+
+
 def update_profile(db: Session, user: User, data: MeUpdate) -> User:
     updates = data.model_dump(exclude_unset=True)
 

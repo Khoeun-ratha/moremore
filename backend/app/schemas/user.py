@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.models.user import Gender, UserRole
 
@@ -28,8 +28,13 @@ class UserOut(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: str | None = None
+    email: EmailStr | None = None
     is_active: bool | None = None
     role: UserRole | None = None
+
+
+class UserPasswordReset(BaseModel):
+    new_password: str = Field(min_length=8)
 
 
 class MeUpdate(BaseModel):

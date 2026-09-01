@@ -88,7 +88,7 @@ until lesson N's `completed` flag is true. It is not enforced by the API.
 ## 2. Admin flow — web admin panel
 
 ```
-Admin logs in (same /auth/login, account must have role=admin)
+Admin logs in (same /auth/login, account must have role=admin or role=super_admin)
   │
   ├─ Manage courses
   │     POST/PATCH/DELETE /api/v1/courses          create/edit/remove a book or course
@@ -104,13 +104,21 @@ Admin logs in (same /auth/login, account must have role=admin)
   │     POST/PATCH/DELETE /api/v1/lessons/{id}/quiz, /api/v1/quizzes/{id}
   │       (nested questions + choices in one payload; exactly one correct choice per question)
   │
-  └─ View users & their progress
-        GET /api/v1/users
-        GET /api/v1/users/{id}/progress
+  └─ View/manage users & their progress
+        GET /api/v1/users, GET /api/v1/users/{id}/progress          (any admin or super admin)
+        PATCH /api/v1/users/{id}                                    (name, email, active, role)
+        POST /api/v1/users/{id}/reset-password
+        DELETE /api/v1/users/{id}
 ```
 
-There is no self-serve admin signup — an existing admin promotes a user via
-`PATCH /api/v1/users/{id}` (`role: "admin"`), or it's set directly in the DB for the first admin.
+There is no self-serve admin or super-admin signup — the first `super_admin` is set directly in
+the DB. A **super admin** can do everything a regular admin can, plus manage admin accounts: only
+a super admin may grant/revoke the `admin` (or `super_admin`) role, or edit, reset the password of,
+or delete an *existing* admin/super-admin account (`PATCH`/`POST reset-password`/`DELETE` on
+`/api/v1/users/{id}` all 403 for a regular admin when the target is admin-tier — see
+`users.py::_require_super_admin_for_admin_target`). A regular admin still has unrestricted access
+to plain (`role=user`) accounts and to all course/lesson/quiz content — this only gates one admin
+account from being able to compromise or lock out another.
 
 ## 3. Auth token lifecycle
 

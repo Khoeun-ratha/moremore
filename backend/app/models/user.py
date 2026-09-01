@@ -10,6 +10,7 @@ from app.db.base import Base
 class UserRole(str, enum.Enum):
     user = "user"
     admin = "admin"
+    super_admin = "super_admin"
 
 
 class Gender(str, enum.Enum):

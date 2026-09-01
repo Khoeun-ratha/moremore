@@ -27,6 +27,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
-    if user.role != UserRole.admin:
+    if user.role not in (UserRole.admin, UserRole.super_admin):
         raise AppError(403, "Admin privileges required")
+    return user
+
+
+def require_super_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != UserRole.super_admin:
+        raise AppError(403, "Super admin privileges required")
     return user

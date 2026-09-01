@@ -104,22 +104,33 @@ def user_headers(client):
     return _register_and_login(client, "user@example.com")
 
 
-@pytest.fixture
-def admin_headers(client, db_session, engine):
-    headers = _register_and_login(client, "admin@example.com")
-
-    from app.models.user import User, UserRole
+def _become(client, engine, email: str, role: "UserRole"):
+    from app.models.user import User
 
     with engine.begin() as conn:
-        conn.execute(
-            User.__table__.update().where(User.__table__.c.email == "admin@example.com").values(role=UserRole.admin)
-        )
+        conn.execute(User.__table__.update().where(User.__table__.c.email == email).values(role=role))
 
     # the access token embeds the role at issue time, so log in again to get an
-    # access token reflecting the now-admin role.
+    # access token reflecting the new role.
     resp = client.post(
         "/api/v1/auth/login",
-        data={"username": "admin@example.com", "password": "Password123!"},
+        data={"username": email, "password": "Password123!"},
     )
     tokens = resp.json()
     return {"Authorization": f"Bearer {tokens['access_token']}"}
+
+
+@pytest.fixture
+def admin_headers(client, db_session, engine):
+    from app.models.user import UserRole
+
+    _register_and_login(client, "admin@example.com")
+    return _become(client, engine, "admin@example.com", UserRole.admin)
+
+
+@pytest.fixture
+def super_admin_headers(client, db_session, engine):
+    from app.models.user import UserRole
+
+    _register_and_login(client, "superadmin@example.com")
+    return _become(client, engine, "superadmin@example.com", UserRole.super_admin)
