@@ -84,17 +84,135 @@ def cover_image_url_for(course_title: str) -> str:
     return f"/media/images/{stored_name}"
 
 
-VIDEOS = [
-    "/media/videos/76eadef4a7ae43ba891be5e35ee2fb4d.mp4",
-    "/media/videos/dd423566b77246f08a8cda253edf7256.mp4",
-    "/media/videos/f0826aa2926d4a24a973525fbc619055.mp4",
-]
-PDFS = [
-    "/media/pdfs/112588941ff14edc94c094ecb7eefd84.pdf",
-    "/media/pdfs/46db623025d04d2c82b69e11e33c362c.pdf",
-    "/media/pdfs/5888310e424d4f85baf5b649e4e3a209.pdf",
-    "/media/pdfs/d4b7574cf5354ea5b045a652b050e228.pdf",
-]
+# Real, web-verified resources per course — one YouTube tutorial and one
+# freely-accessible PDF reference, reused across that course's lessons (the
+# app's video/PDF viewers already handle absolute https:// URLs directly, no
+# different from the locally-hosted media used elsewhere). Every URL below
+# was found via live web search and confirmed to actually resolve (YouTube
+# oEmbed lookup for videos, HTTP fetch + content-type check for PDFs) — none
+# were guessed or pattern-generated.
+COURSE_RESOURCES: dict[str, tuple[str, str]] = {
+    "Introduction to Python Programming": (
+        "https://www.youtube.com/watch?v=rfscVS0vtbw",
+        "https://static.realpython.com/python-basics-sample-chapters.pdf",
+    ),
+    "Advanced JavaScript & Async Patterns": (
+        "https://www.youtube.com/watch?v=rjOJ2eLBft8",
+        "https://eloquentjavascript.net/Eloquent_JavaScript_small.pdf",
+    ),
+    "Java Programming Fundamentals": (
+        "https://www.youtube.com/watch?v=eIrMbAQSU34",
+        "https://math.hws.edu/eck/cs124/downloads/javanotes9-swing-linked.pdf",
+    ),
+    "C++ for Beginners": (
+        "https://www.youtube.com/watch?v=vLnPwxZdW4Y",
+        "https://www.tutorialspoint.com/cplusplus/cpp_tutorial.pdf",
+    ),
+    "Go Programming Essentials": (
+        "https://www.youtube.com/watch?v=un6ZyFkqFKo",
+        "https://www.tutorialspoint.com/go/go_tutorial.pdf",
+    ),
+    "SQL for Data Analysis": (
+        "https://www.youtube.com/watch?v=mXW7JHJM34k",
+        "https://data36.com/wp-content/uploads/2018/12/sql-cheat-sheet-for-data-scientists-by-tomi-mester.pdf",
+    ),
+    "Web Development Fundamentals": (
+        "https://www.youtube.com/watch?v=dX8396ZmSPk",
+        "https://htmlcheatsheet.com/css/CSS-Cheat-Sheet.pdf",
+    ),
+    "React.js Essentials": (
+        "https://www.youtube.com/watch?v=bMknfKXIFA8",
+        "https://ihatetomatoes.net/wp-content/uploads/2017/01/react-cheat-sheet.pdf",
+    ),
+    "Node.js Backend Development": (
+        "https://www.youtube.com/watch?v=Oe421EPjeBE",
+        "https://cheatography.com/digotetso/cheat-sheets/nodejs-cheat-sheet/pdf/",
+    ),
+    "Responsive Web Design": (
+        "https://www.youtube.com/watch?v=ieTHC78giGQ",
+        "https://static.frontendmasters.com/resources/2017-10-03-responsive-web-design-flexbox-css-grid/Flexbox-and-CSS-Grid-Properties-Cheat-Sheet.pdf",
+    ),
+    "Data Science Basics": (
+        "https://www.youtube.com/watch?v=r-uOLxNrNk8",
+        "https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf",
+    ),
+    "Machine Learning Foundations": (
+        "https://www.youtube.com/watch?v=i_LwzRVP7bg",
+        "https://cs229.stanford.edu/main_notes.pdf",
+    ),
+    "Data Visualization with Python": (
+        "https://www.youtube.com/watch?v=OZOOLe2imFo",
+        "https://www.dataquest.io/wp-content/uploads/2024/11/matplotlib-cheat-sheet.pdf",
+    ),
+    "Excel for Data Analysis": (
+        "https://www.youtube.com/watch?v=F5jIFP56J0E",
+        "https://www.dataquest.io/wp-content/uploads/2024/12/Microsoft-Excel-Cheat-Sheet.pdf",
+    ),
+    "UI/UX Design Principles": (
+        "https://www.youtube.com/watch?v=c9Wg6Cb_YlU",
+        "https://bpb-eu-w2.wpmucdn.com/sites.aub.edu.lb/dist/c/13/files/2019/06/the-basics-of-ux-design.pdf",
+    ),
+    "Graphic Design Fundamentals": (
+        "https://www.youtube.com/watch?v=GQS7wPujL2k",
+        "https://archive.org/download/GraphicDesignAndPrintProductionFundamentals/Graphic-Design-and-Print-Production-Fundamentals.pdf",
+    ),
+    "Figma for Product Design": (
+        "https://www.youtube.com/watch?v=mT_Jjn8RJdo",
+        "https://fenix.tecnico.ulisboa.pt/downloadFile/563568428826600/Figma%20Tutorial.pdf",
+    ),
+    "Digital Marketing Essentials": (
+        "https://www.youtube.com/watch?v=vFfV2E6jo6A",
+        "https://www.digitalmarketer.com/digital-marketing/assets/pdf/ultimate-guide-to-digital-marketing.pdf",
+    ),
+    "Social Media Marketing Strategy": (
+        "https://www.youtube.com/watch?v=LusRWlygGIk",
+        "https://socialbusiness.hootsuite.com/rs/hootsuitemediainc/images/Social%20Media%20Strategy%20Workbook.pdf",
+    ),
+    "Search Engine Optimization (SEO)": (
+        "https://www.youtube.com/watch?v=E8sAnZji31w",
+        "https://www.cuit.columbia.edu/sites/default/files/content/search-engine-optimization-starter-guide.pdf",
+    ),
+    "Project Management Fundamentals": (
+        "https://www.youtube.com/watch?v=Uccfz9bQBlE",
+        "https://archive.org/download/2014ProjectManagement/2014_project-management.pdf",
+    ),
+    "Entrepreneurship 101": (
+        "https://www.youtube.com/watch?v=IG3b6RrnkzI",
+        "https://archive.org/download/openstax-entrepreneurship/Entrepreneurship-WEB_qNSArxT.pdf",
+    ),
+    "Public Speaking and Presentation Skills": (
+        "https://www.youtube.com/watch?v=HN0hkfD6c_c",
+        "https://ccdn.toastmasters.org/medias/files/department-documents/club-documents/fundamentals-of-public-speaking/fundamentals-of-public-speaking-english.pdf",
+    ),
+    "Personal Finance Basics": (
+        "https://www.youtube.com/watch?v=ZZ56nyc0s_E",
+        "https://mycreditunion.gov/sites/default/static-files/money-basics-guide-budgeting-savings.pdf",
+    ),
+    "AWS Cloud Fundamentals": (
+        "https://www.youtube.com/watch?v=NhDYbskXRgc",
+        "https://docs.aws.amazon.com/pdfs/aws-certification/latest/cloud-practitioner-02/cloud-practitioner-02.pdf",
+    ),
+    "Docker and Containers": (
+        "https://www.youtube.com/watch?v=Wf2eSG3owoA",
+        "https://docs.docker.com/get-started/docker_cheatsheet.pdf",
+    ),
+    "Introduction to Cybersecurity": (
+        "https://www.youtube.com/watch?v=9HOpanT0GRs",
+        "https://www.cisa.gov/sites/default/files/publications/Cyber%20Essentials%20Starter%20Kit_03.12.2021_508_0.pdf",
+    ),
+    "Flutter Mobile App Development": (
+        "https://www.youtube.com/watch?v=VPvVD8t02U8",
+        "https://www.tutorialspoint.com/flutter/flutter_tutorial.pdf",
+    ),
+    "Android Development with Kotlin": (
+        "https://www.youtube.com/watch?v=blKkRoZPxLc",
+        "https://kotlinlang.org/docs/kotlin-reference.pdf",
+    ),
+    "Photography Fundamentals": (
+        "https://www.youtube.com/watch?v=yhAmMUi2NmM",
+        "https://cdn.photoworkout.com/files/camera-settings-cheat-sheet.pdf",
+    ),
+}
 
 # One "what does this actually mean" conceptual question per category,
 # cycled across that category's lessons as each quiz's second question.
@@ -595,13 +713,14 @@ def build_courses(created_by: int) -> list[Course]:
                 ],
             )
             use_video = l_idx % 2 == 0
+            video_url, pdf_url = COURSE_RESOURCES[title]
             lessons.append(
                 Lesson(
                     order_index=l_idx,
                     title=lesson_title,
                     content=f"In this lesson, you'll learn about {topic_phrase}.",
-                    video_url=VIDEOS[(c_idx + l_idx) % len(VIDEOS)] if use_video else None,
-                    file_url=PDFS[(c_idx + l_idx) % len(PDFS)] if not use_video else None,
+                    video_url=video_url if use_video else None,
+                    file_url=pdf_url if not use_video else None,
                     quiz=quiz,
                 )
             )

@@ -96,7 +96,12 @@ class _LessonScreenState extends State<LessonScreen> {
 
   Future<void> _openFile(String url) async {
     final uri = Uri.parse(url);
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    var launched = false;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      launched = false;
+    }
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.trRead('couldNotOpenFile'))),

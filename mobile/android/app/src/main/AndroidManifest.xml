@@ -47,5 +47,17 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Required by url_launcher to open lesson PDF/media links in an
+             external browser or PDF viewer — without this, Android 11+
+             package-visibility restrictions block ACTION_VIEW from finding
+             any app to handle http(s) links, and launchUrl silently fails. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="http"/>
+        </intent>
     </queries>
 </manifest>
