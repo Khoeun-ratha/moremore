@@ -5,6 +5,7 @@ import '../../api/api_error.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/shaking_error_banner.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -282,12 +283,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ),
                             if (_error != null) ...[
                               const SizedBox(height: 12),
-                              Text(
-                                _error!,
-                                style: const TextStyle(
-                                  color: AppColors.danger,
-                                  fontSize: 13,
-                                ),
+                              ShakingErrorBanner(
+                                key: ValueKey(_error),
+                                message: _error!,
                               ),
                             ],
                             const SizedBox(height: 20),

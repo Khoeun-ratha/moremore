@@ -6,6 +6,7 @@ import '../../api/api_error.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/shaking_error_banner.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -257,13 +258,10 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             ),
                             if (_error != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                _error!,
-                                style: const TextStyle(
-                                  color: AppColors.danger,
-                                  fontSize: 13,
-                                ),
+                              const SizedBox(height: 12),
+                              ShakingErrorBanner(
+                                key: ValueKey(_error),
+                                message: _error!,
                               ),
                             ],
                             const SizedBox(height: 16),

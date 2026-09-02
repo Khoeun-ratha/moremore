@@ -712,15 +712,14 @@ def build_courses(created_by: int) -> list[Course]:
                     category_question(category, c_idx + l_idx),
                 ],
             )
-            use_video = l_idx % 2 == 0
             video_url, pdf_url = COURSE_RESOURCES[title]
             lessons.append(
                 Lesson(
                     order_index=l_idx,
                     title=lesson_title,
                     content=f"In this lesson, you'll learn about {topic_phrase}.",
-                    video_url=video_url if use_video else None,
-                    file_url=pdf_url if not use_video else None,
+                    video_url=video_url,
+                    file_url=pdf_url,
                     quiz=quiz,
                 )
             )

@@ -8,6 +8,12 @@
   "fieldRequired": "This field is required",
   "passwordsDoNotMatch": "Passwords do not match",
   "passwordMinLength": "Password must be at least 8 characters",
+  "invalidCredentials": "Incorrect email/phone or password",
+  "accountDisabled": "This account has been disabled",
+  "emailAlreadyRegistered": "That email is already registered",
+  "phoneAlreadyRegistered": "That phone number is already registered",
+  "currentPasswordIncorrect": "Current password is incorrect",
+  "resetCodeInvalid": "This reset code is invalid or has expired",
 
   "navHome": "Home",
   "navCourses": "Courses",

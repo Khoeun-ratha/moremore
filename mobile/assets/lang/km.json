@@ -8,6 +8,12 @@
   "fieldRequired": "សូមបំពេញព័ត៌មាននេះ",
   "passwordsDoNotMatch": "ពាក្យសម្ងាត់មិនត្រូវគ្នាទេ",
   "passwordMinLength": "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ",
+  "invalidCredentials": "អ៊ីមែល/លេខទូរស័ព្ទ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ",
+  "accountDisabled": "គណនីនេះត្រូវបានផ្អាក",
+  "emailAlreadyRegistered": "អ៊ីមែលនេះត្រូវបានចុះឈ្មោះរួចហើយ",
+  "phoneAlreadyRegistered": "លេខទូរស័ព្ទនេះត្រូវបានចុះឈ្មោះរួចហើយ",
+  "currentPasswordIncorrect": "ពាក្យសម្ងាត់បច្ចុប្បន្នមិនត្រឹមត្រូវ",
+  "resetCodeInvalid": "កូដកំណត់ពាក្យសម្ងាត់ឡើងវិញនេះមិនត្រឹមត្រូវ ឬបានផុតកំណត់ពេល",
 
   "navHome": "ទំព័រដើម",
   "navCourses": "វគ្គសិក្សា",
