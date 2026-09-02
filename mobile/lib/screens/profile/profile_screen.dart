@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
+import '../../state/locale_store.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/media.dart';
 import '../../widgets/stat_tile.dart';
@@ -43,22 +45,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _confirmLogout(AuthStore auth) async {
+    final tr = context.tr;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log out'),
-        content: const Text(
-          'Are you sure you want to log out of your account?',
-        ),
+        title: Text(tr('logOut')),
+        content: Text(tr('logOutConfirmMessage')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(tr('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: const Text('Log out'),
+            child: Text(tr('logOut')),
           ),
         ],
       ),
@@ -66,8 +67,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) auth.logout();
   }
 
+  Future<void> _pickLanguage() async {
+    final localeStore = context.read<LocaleStore>();
+    final tr = context.tr;
+    final current = context.read<LocaleStore>().locale?.languageCode ?? 'en';
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(tr('language')),
+        children: [
+          RadioListTile<String>(
+            value: 'en',
+            groupValue: current,
+            title: Text(tr('languageEnglish')),
+            onChanged: (v) => Navigator.pop(dialogContext, v),
+          ),
+          RadioListTile<String>(
+            value: 'km',
+            groupValue: current,
+            title: Text(tr('languageKhmer')),
+            onChanged: (v) => Navigator.pop(dialogContext, v),
+          ),
+        ],
+      ),
+    );
+    if (chosen != null && chosen != current) {
+      await localeStore.setLocale(Locale(chosen));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final auth = context.watch<AuthStore>();
     final user = auth.user;
     final initial = (user?.fullName.isNotEmpty ?? false)
@@ -76,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: Text(tr('profileTitle'))),
       body: SafeArea(
         top: false,
         child: RefreshIndicator(
@@ -148,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.menu_book_outlined,
                       iconColor: AppColors.primary,
                       value: _enrolledCourseCount?.toString() ?? '—',
-                      label: 'Courses',
+                      label: tr('coursesLabel'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -157,7 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.workspace_premium_outlined,
                       iconColor: AppColors.warning,
                       value: _certificateCount?.toString() ?? '—',
-                      label: 'Certificates',
+                      label: tr('certificatesLabel'),
                     ),
                   ),
                 ],
@@ -168,25 +199,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _MenuTile(
                     icon: Icons.workspace_premium_outlined,
                     iconColor: AppColors.warning,
-                    label: 'My Certificates',
+                    label: tr('myCertificatesMenu'),
                     onTap: () => context.push('/profile/certificates'),
                   ),
                   _MenuTile(
                     icon: Icons.edit_outlined,
                     iconColor: AppColors.primary,
-                    label: 'Edit Profile',
+                    label: tr('editProfileMenu'),
                     onTap: () => context.push('/profile/edit'),
                   ),
                   _MenuTile(
                     icon: Icons.lock_outline,
                     iconColor: AppColors.primaryHigh,
-                    label: 'Change Password',
+                    label: tr('changePasswordMenu'),
                     onTap: () => context.push('/profile/change-password'),
+                  ),
+                  _MenuTile(
+                    icon: Icons.language_outlined,
+                    iconColor: AppColors.success,
+                    label: tr('language'),
+                    onTap: _pickLanguage,
                   ),
                   _MenuTile(
                     icon: Icons.forum_outlined,
                     iconColor: AppColors.success,
-                    label: 'Feedback & Suggestions',
+                    label: tr('feedbackSuggestionsMenu'),
                     onTap: () => context.push('/profile/feedback'),
                     showDivider: false,
                   ),
@@ -198,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _MenuTile(
                     icon: Icons.logout,
                     iconColor: AppColors.danger,
-                    label: 'Log out',
+                    label: tr('logOut'),
                     labelColor: AppColors.danger,
                     onTap: () => _confirmLogout(auth),
                     showChevron: false,

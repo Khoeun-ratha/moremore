@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/l10n_extension.dart';
 import '../../models/certificate.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
@@ -34,10 +35,11 @@ class _CertificateDetailScreenState extends State<CertificateDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final learnerName = context.watch<AuthStore>().user?.fullName ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Certificate')),
+      appBar: AppBar(title: Text(tr('certificateTitle'))),
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -82,12 +84,16 @@ class _CertificateDetailScreenState extends State<CertificateDetailScreen> {
                             ),
                           )
                         : const Icon(Icons.download_outlined),
-                    label: Text(_saving ? 'Saving...' : 'Download Certificate'),
+                    label: Text(
+                      _saving
+                          ? tr('savingEllipsis')
+                          : tr('downloadCertificate'),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Close'),
+                    child: Text(tr('close')),
                   ),
                 ],
               ),

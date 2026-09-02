@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/certificate.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
@@ -36,7 +37,7 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
       final certificates = await context.read<ApiServices>().certificates.me();
       setState(() => _certificates = certificates);
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -45,7 +46,7 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My Certificates')),
+      appBar: AppBar(title: Text(context.tr('myCertificatesTitle'))),
       body: AnimatedSwitcher(
         duration: AppMotion.fast,
         switchInCurve: AppMotion.curve,
@@ -56,14 +57,13 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
   }
 
   Widget _buildBody() {
+    final tr = context.tr;
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
 
     final certificates = _certificates!;
     if (certificates.isEmpty) {
-      return const Center(
-        child: Text('Complete a course to earn your first certificate.'),
-      );
+      return Center(child: Text(tr('completeToEarnCertificate')));
     }
 
     return RefreshIndicator(
@@ -82,7 +82,11 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
               ),
               title: Text(certificate.courseTitle),
               subtitle: Text(
-                'Issued ${DateFormat.yMMMd().format(certificate.issuedAt.toLocal())}',
+                tr('issuedOn', {
+                  'date': DateFormat.yMMMd().format(
+                    certificate.issuedAt.toLocal(),
+                  ),
+                }),
               ),
               trailing: const Icon(Icons.chevron_right, size: 18),
               onTap: () => context.push(

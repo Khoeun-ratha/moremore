@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
+import '../../l10n/l10n_extension.dart';
+import '../../l10n/translations.dart';
 import '../../models/user.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
@@ -68,9 +70,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await context.read<AuthStore>().updateAvatar(path);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
       }
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
@@ -91,13 +93,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         gender: _gender,
       );
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Profile updated.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.trRead('profileUpdated'))),
+        );
         context.pop();
       }
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -136,6 +138,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final user = context.watch<AuthStore>().user;
     final initial = (user?.fullName.isNotEmpty ?? false)
         ? user!.fullName[0].toUpperCase()
@@ -143,7 +146,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Edit Profile')),
+      appBar: AppBar(title: Text(tr('editProfileTitle'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -246,38 +249,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: _decoration(
-                    'Full name',
+                    tr('fullNameLabel'),
                     icon: Icons.person_outline,
                   ),
                   textInputAction: TextInputAction.next,
                   validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Full name is required' : null,
+                      (v == null || v.isEmpty) ? tr('fullNameRequired') : null,
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
                   controller: _emailController,
-                  decoration: _decoration('Email', icon: Icons.mail_outline),
+                  decoration: _decoration(
+                    tr('emailLabel'),
+                    icon: Icons.mail_outline,
+                  ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Email is required' : null,
+                      (v == null || v.isEmpty) ? tr('emailRequired') : null,
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
                   controller: _phoneController,
                   decoration: _decoration(
-                    'Phone number',
+                    tr('phoneLabel'),
                     icon: Icons.phone_outlined,
                   ),
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 20),
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Gender',
-                    style: TextStyle(
+                    tr('genderLabel'),
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
@@ -291,7 +297,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: Gender.values.map((g) {
                     final selected = _gender == g;
                     return ChoiceChip(
-                      label: Text(genderLabel(g)),
+                      label: Text(
+                        genderLabel(context.watch<Translations>(), g),
+                      ),
                       selected: selected,
                       onSelected: (_) =>
                           setState(() => _gender = selected ? null : g),
@@ -335,7 +343,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Save'),
+                      : Text(tr('save')),
                 ),
               ],
             ),
@@ -357,6 +365,7 @@ class _AvatarSourceSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     return SafeArea(
       child: Container(
         margin: const EdgeInsets.all(12),
@@ -373,7 +382,7 @@ class _AvatarSourceSheet extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Update profile photo',
+                  tr('updateProfilePhoto'),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -387,7 +396,7 @@ class _AvatarSourceSheet extends StatelessWidget {
                 Icons.photo_camera_outlined,
                 color: AppColors.primaryHigh,
               ),
-              title: const Text('Take a photo'),
+              title: Text(tr('takeAPhoto')),
               onTap: onTakePhoto,
             ),
             ListTile(
@@ -395,7 +404,7 @@ class _AvatarSourceSheet extends StatelessWidget {
                 Icons.photo_library_outlined,
                 color: AppColors.primaryHigh,
               ),
-              title: const Text('Choose from gallery'),
+              title: Text(tr('chooseFromGallery')),
               onTap: onChooseFromGallery,
             ),
             const SizedBox(height: 8),

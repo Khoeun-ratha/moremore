@@ -11,7 +11,7 @@ class ScoreGauge extends StatelessWidget {
     required this.percentage,
     this.size = 176,
     this.strokeWidth = 14,
-    this.label = 'Mastery',
+    required this.label,
     this.colors = const [AppColors.primaryHigh, AppColors.primary],
   });
 

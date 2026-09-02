@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
+import '../l10n/l10n_extension.dart';
 import '../theme/app_theme.dart';
 
 /// Embeds a YouTube lesson video via the official iFrame Player API.
@@ -43,10 +44,10 @@ class _YoutubeLessonPlayerState extends State<YoutubeLessonPlayer> {
         aspectRatio: 16 / 9,
         child: ColoredBox(
           color: AppColors.surfaceHigh,
-          child: const Center(
+          child: Center(
             child: Text(
-              'Could not load this video',
-              style: TextStyle(color: AppColors.textSecondary),
+              context.tr('couldNotLoadVideo'),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
         ),

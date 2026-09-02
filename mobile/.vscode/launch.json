@@ -6,7 +6,7 @@
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
-      "toolArgs": ["--dart-define=API_BASE_URL=http://192.168.1.239:8000/api/v1"]
+      "toolArgs": ["--dart-define=API_BASE_URL=http://192.168.1.6:8000/api/v1"]
     },
     {
       "name": "mobile (Android emulator)",

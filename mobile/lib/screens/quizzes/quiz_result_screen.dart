@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/certificate.dart';
 import '../../models/quiz.dart';
 import '../../theme/app_theme.dart';
@@ -83,9 +84,9 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
       }
     } finally {
       if (mounted) setState(() => _continuing = false);
@@ -94,13 +95,18 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final result = widget.result;
     final passed = result.passed;
     final canContinue = !widget.isHistorical && widget.courseId != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isHistorical ? 'Attempt Details' : 'Quiz Results'),
+        title: Text(
+          widget.isHistorical
+              ? tr('attemptDetailsTitle')
+              : tr('quizResultsTitle'),
+        ),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
@@ -128,6 +134,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                   children: [
                     ScoreGauge(
                       percentage: result.percentage,
+                      label: tr('scoreLabel'),
                       colors: passed
                           ? const [AppColors.success, AppColors.primary]
                           : const [AppColors.danger, AppColors.warning],
@@ -158,7 +165,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                passed ? 'Great job!' : 'Keep Practicing',
+                passed ? tr('greatJob') : tr('keepPracticing'),
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -168,8 +175,8 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               const SizedBox(height: 6),
               Text(
                 passed
-                    ? "You've successfully completed this quiz."
-                    : 'Review your answers below and try again.',
+                    ? tr('successfullyCompletedQuiz')
+                    : tr('reviewAnswersBelow'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
@@ -180,15 +187,18 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Your Score',
-                    style: TextStyle(
+                  Text(
+                    tr('yourScore'),
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
                   ),
                   Text(
-                    '${result.score}/${result.total} Correct',
+                    tr('correctOfTotal', {
+                      'score': result.score,
+                      'total': result.total,
+                    }),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -217,17 +227,17 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                     color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.check_circle_outline,
                         color: AppColors.success,
                         size: 18,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Lesson marked complete',
-                        style: TextStyle(
+                        tr('lessonMarkedComplete'),
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppColors.success,
@@ -245,7 +255,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                       icon: Icons.check_circle_outline,
                       iconColor: AppColors.success,
                       value: '${result.score}',
-                      label: 'CORRECT',
+                      label: tr('correctLabel'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -255,8 +265,8 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                           ? Icons.emoji_events_outlined
                           : Icons.refresh,
                       iconColor: passed ? AppColors.warning : AppColors.danger,
-                      value: passed ? 'Passed' : 'Retry',
-                      label: 'RESULT',
+                      value: passed ? tr('passedLabel') : tr('retryLabel'),
+                      label: tr('resultLabel'),
                     ),
                   ),
                 ],
@@ -265,7 +275,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Review Answers',
+                  tr('reviewAnswers'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -297,7 +307,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Question ${i + 1}',
+                                tr('questionN', {'n': i + 1}),
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
                                 ),
@@ -314,7 +324,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               if (widget.isHistorical)
                 OutlinedButton(
                   onPressed: () => context.pop(),
-                  child: const Text('Close'),
+                  child: Text(tr('close')),
                 )
               else ...[
                 if (passed)
@@ -332,20 +342,20 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                         : const Icon(Icons.arrow_forward, size: 18),
                     label: Text(
                       canContinue
-                          ? 'Continue to Next Lesson'
-                          : 'Back to Courses',
+                          ? tr('continueToNextLesson')
+                          : tr('backToCourses'),
                     ),
                   )
                 else
                   FilledButton(
                     onPressed: () => context.pop(),
-                    child: const Text('Retake Quiz'),
+                    child: Text(tr('retakeQuiz')),
                   ),
                 if (!passed || canContinue) ...[
                   const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: () => context.go('/courses'),
-                    child: const Text('Back to Courses'),
+                    child: Text(tr('backToCourses')),
                   ),
                 ],
               ],

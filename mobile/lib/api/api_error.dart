@@ -1,8 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
+
+import '../l10n/l10n_extension.dart';
 
 /// Backend errors come back either as `{"error": "message"}` (app AppError)
 /// or FastAPI's default `{"detail": ...}` (validation errors, HTTPException).
-String extractErrorMessage(Object error) {
+/// Those messages come from the server in English only; only the two
+/// client-side fallbacks below are localized.
+///
+/// Always called from catch blocks — after an `await`, outside any build
+/// phase — so this must use `context.trRead`, never `context.tr`
+/// (`context.watch` throws when called outside build).
+String extractErrorMessage(BuildContext context, Object error) {
   if (error is DioException) {
     final data = error.response?.data;
     if (data is Map) {
@@ -18,9 +27,9 @@ String extractErrorMessage(Object error) {
     }
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.connectionError) {
-      return 'Could not reach the server. Check your connection and try again.';
+      return context.trRead('couldNotReachServer');
     }
-    return error.message ?? 'Something went wrong';
+    return error.message ?? context.trRead('somethingWentWrong');
   }
   return error.toString();
 }

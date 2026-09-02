@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
 import '../../models/progress.dart';
@@ -71,21 +72,22 @@ class _HomeScreenState extends State<HomeScreen> {
         _nextLesson = nextLesson;
       });
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  String _greeting() {
+  String _greeting(String Function(String) tr) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return tr('greetingMorning');
+    if (hour < 18) return tr('greetingAfternoon');
+    return tr('greetingEvening');
   }
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final user = context.watch<AuthStore>().user;
     final name = user?.fullName.trim() ?? '';
     final firstName = name.isEmpty ? '' : name.split(' ').first;
@@ -102,8 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _HomeHeaderDelegate(
-                  greeting: _greeting(),
-                  name: name.isEmpty ? 'Welcome back' : name,
+                  greeting: _greeting(tr),
+                  name: name.isEmpty ? tr('welcomeBack') : name,
                   initial: initial,
                   avatarUrl: user?.avatarUrl,
                   onAvatarTap: () => context.go('/profile'),
@@ -131,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    final tr = context.tr;
     final progress = _progress!;
     final recommended = _recommended!;
     final enrolled = progress.courses.where((c) => c.percentage > 0).toList();
@@ -172,8 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           if (enrolled.isNotEmpty) ...[
             _sectionHeader(
-              'Enrolled Courses',
+              tr('enrolledCourses'),
               onSeeAll: () => context.go('/progress'),
+              seeAllLabel: tr('seeAll'),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -191,8 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           if (recommended.isNotEmpty) ...[
             _sectionHeader(
-              'Recommended for You',
+              tr('recommendedForYou'),
               onSeeAll: () => context.go('/courses'),
+              seeAllLabel: tr('seeAll'),
             ),
             const SizedBox(height: 12),
             ...recommended.map(
@@ -211,6 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEmptyState() {
+    final tr = context.tr;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -231,25 +237,28 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              'Start learning something new',
+            Text(
+              tr('startLearningSomethingNew'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Browse our course catalog to find something you\'ll love.',
+            Text(
+              tr('browseCatalogHint'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 20),
             FilledButton(
               onPressed: () => context.go('/courses'),
-              child: const Text('Browse Courses'),
+              child: Text(tr('browseCourses')),
             ),
           ],
         ),
@@ -262,6 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
     int completedCount,
     double overallPercentage,
   ) {
+    final tr = context.tr;
     return Row(
       children: [
         Expanded(
@@ -269,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.menu_book_outlined,
             iconColor: AppColors.primary,
             value: '$enrolledCount',
-            label: 'Enrolled',
+            label: tr('statEnrolled'),
           ),
         ),
         const SizedBox(width: 10),
@@ -278,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.check_circle_outline,
             iconColor: AppColors.success,
             value: '$completedCount',
-            label: 'Completed',
+            label: tr('statCompleted'),
           ),
         ),
         const SizedBox(width: 10),
@@ -287,14 +297,18 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.trending_up,
             iconColor: AppColors.warning,
             value: '${overallPercentage.toStringAsFixed(0)}%',
-            label: 'Overall',
+            label: tr('statOverall'),
           ),
         ),
       ],
     );
   }
 
-  Widget _sectionHeader(String title, {VoidCallback? onSeeAll}) => Row(
+  Widget _sectionHeader(
+    String title, {
+    VoidCallback? onSeeAll,
+    String seeAllLabel = '',
+  }) => Row(
     children: [
       Expanded(
         child: Text(
@@ -309,9 +323,9 @@ class _HomeScreenState extends State<HomeScreen> {
       if (onSeeAll != null)
         GestureDetector(
           onTap: onSeeAll,
-          child: const Text(
-            'See all',
-            style: TextStyle(
+          child: Text(
+            seeAllLabel,
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.primaryHigh,
@@ -322,6 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 
   Widget _buildContinueLearningCard(CourseProgress course, Lesson? nextLesson) {
+    final tr = context.tr;
     final next = nextLesson;
     final showNextLesson = next != null && next.courseId == course.courseId;
     return Container(
@@ -360,9 +375,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
-                'CONTINUE LEARNING',
-                style: TextStyle(
+              Text(
+                tr('continueLearningLabel'),
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -402,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
-                      'Next: ${next.title}',
+                      tr('nextLessonLabel', {'title': next.title}),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -428,7 +443,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${course.completedLessons}/${course.totalLessons} lessons · ${course.percentage.toStringAsFixed(0)}% complete',
+            tr('lessonsCompletePercent', {
+              'completed': course.completedLessons,
+              'total': course.totalLessons,
+              'pct': course.percentage.toStringAsFixed(0),
+            }),
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
           const SizedBox(height: 18),
@@ -444,8 +463,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   : context.push('/courses/${course.courseId}'),
               child: Text(
                 showNextLesson
-                    ? 'Resume Lesson ${next.orderIndex + 1}'
-                    : 'Resume',
+                    ? tr('resumeLessonN', {'n': next.orderIndex + 1})
+                    : tr('resume'),
               ),
             ),
           ),
@@ -514,7 +533,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '${course.completedLessons}/${course.totalLessons}\nlessons',
+                            context.tr('lessonsCountShort', {
+                              'n':
+                                  '${course.completedLessons}/${course.totalLessons}',
+                            }),
                             style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.textSecondary,

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
 
@@ -80,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen>
       );
       // Navigation happens via the router's redirect once AuthStore notifies.
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -124,6 +125,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -184,20 +186,20 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
-                              'Welcome back',
+                            Text(
+                              tr('loginWelcomeBack'),
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              'Log in to continue learning',
+                            Text(
+                              tr('loginSubtitle'),
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
                               ),
@@ -206,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen>
                             TextFormField(
                               controller: _identifierController,
                               decoration: _decoration(
-                                'Email or phone number',
+                                tr('loginIdentifierLabel'),
                                 icon: Icons.person_outline,
                               ),
                               keyboardType: TextInputType.text,
@@ -216,14 +218,14 @@ class _LoginScreenState extends State<LoginScreen>
                                 AutofillHints.telephoneNumber,
                               ],
                               validator: (v) => (v == null || v.isEmpty)
-                                  ? 'Email or phone number is required'
+                                  ? tr('loginIdentifierRequired')
                                   : null,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: _passwordController,
                               decoration: _decoration(
-                                'Password',
+                                tr('passwordLabel'),
                                 icon: Icons.lock_outline,
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -243,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen>
                               autofillHints: const [AutofillHints.password],
                               onFieldSubmitted: (_) => _submit(),
                               validator: (v) => (v == null || v.isEmpty)
-                                  ? 'Password is required'
+                                  ? tr('loginPasswordRequired')
                                   : null,
                             ),
                             Align(
@@ -251,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen>
                               child: TextButton(
                                 onPressed: () =>
                                     context.push('/forgot-password'),
-                                child: const Text('Forgot password?'),
+                                child: Text(tr('forgotPasswordLink')),
                               ),
                             ),
                             if (_error != null) ...[
@@ -276,14 +278,12 @@ class _LoginScreenState extends State<LoginScreen>
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('Log in'),
+                                  : Text(tr('loginButton')),
                             ),
                             const SizedBox(height: 12),
                             TextButton(
                               onPressed: () => context.push('/register'),
-                              child: const Text(
-                                "Don't have an account? Register",
-                              ),
+                              child: Text(tr('loginNoAccount')),
                             ),
                           ],
                         ),

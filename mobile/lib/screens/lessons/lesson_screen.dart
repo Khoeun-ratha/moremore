@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/lesson.dart';
 import '../../models/progress.dart';
 import '../../models/quiz.dart';
@@ -69,7 +70,7 @@ class _LessonScreenState extends State<LessonScreen> {
         _courseProgress = courseProgress;
       });
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -84,9 +85,9 @@ class _LessonScreenState extends State<LessonScreen> {
       if (mounted) setState(() => _lesson = updated);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
       }
     } finally {
       if (mounted) setState(() => _completing = false);
@@ -97,9 +98,9 @@ class _LessonScreenState extends State<LessonScreen> {
     final uri = Uri.parse(url);
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not open this file')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('couldNotOpenFile'))),
+      );
     }
   }
 
@@ -108,7 +109,7 @@ class _LessonScreenState extends State<LessonScreen> {
     final progress = _courseProgress;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_lesson?.title ?? 'Lesson'),
+        title: Text(_lesson?.title ?? ''),
         actions: [
           if (progress != null)
             Padding(
@@ -161,6 +162,7 @@ class _LessonScreenState extends State<LessonScreen> {
   }
 
   Widget _buildBody() {
+    final tr = context.tr;
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
 
@@ -199,7 +201,7 @@ class _LessonScreenState extends State<LessonScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'LESSON ${lesson.orderIndex + 1}',
+            tr('lessonNumberBadge', {'n': lesson.orderIndex + 1}),
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -219,9 +221,9 @@ class _LessonScreenState extends State<LessonScreen> {
         ),
         if (lesson.content.isNotEmpty) ...[
           const SizedBox(height: 20),
-          const Text(
-            'About this lesson',
-            style: TextStyle(
+          Text(
+            tr('aboutThisLesson'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -244,9 +246,9 @@ class _LessonScreenState extends State<LessonScreen> {
         ],
         if (fileUrl != null && fileUrl.isNotEmpty) ...[
           const SizedBox(height: 24),
-          const Text(
-            'Resources',
-            style: TextStyle(
+          Text(
+            tr('resources'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -272,8 +274,8 @@ class _LessonScreenState extends State<LessonScreen> {
                   size: 20,
                 ),
               ),
-              title: const Text('Lesson document'),
-              subtitle: const Text('Tap to open or download'),
+              title: Text(tr('lessonSlidesResource')),
+              subtitle: Text(tr('tapToOpenFile')),
               trailing: const Icon(Icons.open_in_new, size: 18),
               onTap: () => _openFile(mediaUrl(fileUrl)),
             ),
@@ -281,9 +283,9 @@ class _LessonScreenState extends State<LessonScreen> {
         ],
         if (_attempts != null && _attempts!.isNotEmpty) ...[
           const SizedBox(height: 28),
-          const Text(
-            'Your Attempts',
-            style: TextStyle(
+          Text(
+            tr('yourAttempts'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -304,7 +306,12 @@ class _LessonScreenState extends State<LessonScreen> {
                             ? AppColors.success
                             : AppColors.danger,
                       ),
-                      title: Text('${attempt.score}/${attempt.total} correct'),
+                      title: Text(
+                        tr('correctCount', {
+                          'score': attempt.score,
+                          'total': attempt.total,
+                        }),
+                      ),
                       subtitle: Text(
                         DateFormat.yMMMd().add_jm().format(
                           attempt.submittedAt.toLocal(),
@@ -324,6 +331,7 @@ class _LessonScreenState extends State<LessonScreen> {
   }
 
   Widget? _buildBottomBar() {
+    final tr = context.tr;
     final lesson = _lesson;
     if (lesson == null) return null;
 
@@ -338,8 +346,8 @@ class _LessonScreenState extends State<LessonScreen> {
               children: [
                 Text(
                   lesson.completed
-                      ? 'Quiz passed'
-                      : 'This lesson includes a quiz',
+                      ? tr('quizPassed')
+                      : tr('thisLessonIncludesQuiz'),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -349,8 +357,8 @@ class _LessonScreenState extends State<LessonScreen> {
                 const SizedBox(height: 2),
                 Text(
                   lesson.completed
-                      ? 'You can retake it anytime'
-                      : 'Pass with the required score to complete it',
+                      ? tr('retakeAnytimeHint')
+                      : tr('passWithRequiredScore'),
                   style: const TextStyle(
                     fontSize: 11.5,
                     color: AppColors.textMuted,
@@ -367,19 +375,19 @@ class _LessonScreenState extends State<LessonScreen> {
               lesson.completed ? Icons.replay : Icons.quiz_outlined,
               size: 18,
             ),
-            label: Text(lesson.completed ? 'Retake' : 'Take the Quiz'),
+            label: Text(lesson.completed ? tr('retake') : tr('takeTheQuiz')),
           ),
         ],
       );
     } else if (lesson.completed) {
-      content = const Row(
+      content = Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle, color: AppColors.success, size: 20),
-          SizedBox(width: 8),
+          const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+          const SizedBox(width: 8),
           Text(
-            'Lesson completed',
-            style: TextStyle(
+            tr('lessonCompleted'),
+            style: const TextStyle(
               fontWeight: FontWeight.w700,
               color: AppColors.success,
             ),
@@ -401,7 +409,7 @@ class _LessonScreenState extends State<LessonScreen> {
                   ),
                 )
               : const Icon(Icons.check_circle_outline),
-          label: const Text('Mark as Complete'),
+          label: Text(tr('markAsComplete')),
         ),
       );
     }

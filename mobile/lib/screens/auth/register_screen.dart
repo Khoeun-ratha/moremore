@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
 
@@ -85,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       );
       // Navigation happens via the router's redirect once AuthStore notifies.
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -129,6 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(backgroundColor: AppColors.background, elevation: 0),
@@ -190,20 +192,20 @@ class _RegisterScreenState extends State<RegisterScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
-                              'Create your account',
+                            Text(
+                              tr('registerTitle'),
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 6),
-                            const Text(
-                              'Start your learning journey today',
+                            Text(
+                              tr('registerSubtitle'),
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
                               ),
@@ -212,34 +214,34 @@ class _RegisterScreenState extends State<RegisterScreen>
                             TextFormField(
                               controller: _nameController,
                               decoration: _decoration(
-                                'Full name',
+                                tr('fullNameLabel'),
                                 icon: Icons.person_outline,
                               ),
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.name],
                               validator: (v) => (v == null || v.isEmpty)
-                                  ? 'Full name is required'
+                                  ? tr('fullNameRequired')
                                   : null,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: _emailController,
                               decoration: _decoration(
-                                'Email',
+                                tr('emailLabel'),
                                 icon: Icons.mail_outline,
                               ),
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.email],
                               validator: (v) => (v == null || v.isEmpty)
-                                  ? 'Email is required'
+                                  ? tr('emailRequired')
                                   : null,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: _phoneController,
                               decoration: _decoration(
-                                'Phone number',
+                                tr('phoneLabel'),
                                 icon: Icons.phone_outlined,
                               ),
                               keyboardType: TextInputType.phone,
@@ -248,14 +250,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 AutofillHints.telephoneNumber,
                               ],
                               validator: (v) => (v == null || v.isEmpty)
-                                  ? 'Phone number is required'
+                                  ? tr('phoneRequired')
                                   : null,
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
                               controller: _passwordController,
                               decoration: _decoration(
-                                'Password',
+                                tr('passwordLabel'),
                                 icon: Icons.lock_outline,
                                 suffixIcon: IconButton(
                                   icon: Icon(
@@ -275,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               autofillHints: const [AutofillHints.newPassword],
                               onFieldSubmitted: (_) => _submit(),
                               validator: (v) => (v == null || v.length < 8)
-                                  ? 'Password must be at least 8 characters'
+                                  ? tr('passwordMinLength')
                                   : null,
                             ),
                             if (_error != null) ...[
@@ -300,7 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Text('Register'),
+                                  : Text(tr('registerButton')),
                             ),
                           ],
                         ),

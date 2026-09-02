@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/progress.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
@@ -35,7 +36,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
       final progress = await context.read<ApiServices>().progress.me();
       setState(() => _progress = progress);
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -44,7 +45,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Progress')),
+      appBar: AppBar(title: Text(context.tr('progressTitle'))),
       body: AnimatedSwitcher(
         duration: AppMotion.fast,
         switchInCurve: AppMotion.curve,
@@ -55,6 +56,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildBody() {
+    final tr = context.tr;
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
 
@@ -66,16 +68,16 @@ class _ProgressScreenState extends State<ProgressScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.bar_chart_rounded,
                 size: 40,
                 color: AppColors.textMuted,
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Enroll in a course to start tracking progress',
+              Text(
+                tr('enrollToTrackProgress'),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textSecondary),
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -90,9 +92,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
         children: [
           _buildOverallCard(progress),
           const SizedBox(height: 24),
-          const Text(
-            'By course',
-            style: TextStyle(
+          Text(
+            tr('byCourse'),
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -106,6 +108,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildOverallCard(OverallProgress progress) {
+    final tr = context.tr;
     final percentage = (progress.overallPercentage / 100)
         .clamp(0, 1)
         .toDouble();
@@ -136,9 +139,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Overall progress',
-                    style: TextStyle(
+                  Text(
+                    tr('overallProgressLabel'),
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
@@ -146,7 +149,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${progress.courses.length} course${progress.courses.length == 1 ? '' : 's'} enrolled',
+                    context.trPlural(
+                      'coursesEnrolledCount',
+                      progress.courses.length,
+                    ),
                     style: const TextStyle(
                       fontSize: 12.5,
                       color: Colors.white70,
@@ -180,6 +186,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   Widget _buildCourseCard(CourseProgress course) {
+    final tr = context.tr;
     final completed = course.percentage >= 100;
     final iconBg = completed
         ? AppColors.success.withValues(alpha: 0.15)
@@ -268,7 +275,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${course.completedLessons} of ${course.totalLessons} lessons',
+                  tr('lessonsOfTotal', {
+                    'completed': course.completedLessons,
+                    'total': course.totalLessons,
+                  }),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,

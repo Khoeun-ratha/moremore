@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/course.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/course_card.dart';
@@ -64,7 +65,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
         _hasMore = result.hasMore;
       });
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) {
         setState(() {
@@ -82,9 +83,10 @@ class _CourseListScreenState extends State<CourseListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Courses'),
+        title: Text(tr('coursesTitle')),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -92,7 +94,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search courses',
+                hintText: tr('searchCourses'),
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -118,7 +120,9 @@ class _CourseListScreenState extends State<CourseListScreen> {
   Widget _buildBody() {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
-    if (_courses.isEmpty) return const Center(child: Text('No courses found'));
+    if (_courses.isEmpty) {
+      return Center(child: Text(context.tr('noCoursesFound')));
+    }
 
     return RefreshIndicator(
       onRefresh: _load,

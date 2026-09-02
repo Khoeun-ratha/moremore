@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/quiz.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
@@ -42,7 +43,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       );
       setState(() => _result = result);
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -50,12 +51,13 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final title = context.tr('attemptDetailsTitle');
     late final Widget content;
     if (_loading) {
       content = Scaffold(
         key: const ValueKey('loading'),
         appBar: AppBar(
-          title: const Text('Attempt Details'),
+          title: Text(title),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => context.pop(),
@@ -67,7 +69,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       content = Scaffold(
         key: const ValueKey('error'),
         appBar: AppBar(
-          title: const Text('Attempt Details'),
+          title: Text(title),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => context.pop(),

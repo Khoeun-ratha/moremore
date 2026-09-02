@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
+import '../../l10n/translations.dart';
 import '../../models/feedback.dart';
 import '../../theme/app_theme.dart';
 
@@ -66,14 +68,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         _subjectController.clear();
         _messageController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thanks — your submission has been sent.'),
-          ),
+          SnackBar(content: Text(context.trRead('thanksSubmissionSent'))),
         );
         _loadMine();
       }
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -112,9 +112,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+    final translations = context.watch<Translations>();
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Feedback & Suggestions')),
+      appBar: AppBar(title: Text(tr('feedbackTitle'))),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadMine,
@@ -127,9 +129,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'What kind of message is this?',
-                      style: TextStyle(
+                    Text(
+                      tr('whatKindOfMessage'),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
@@ -142,7 +144,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       children: FeedbackType.values.map((t) {
                         final selected = _type == t;
                         return ChoiceChip(
-                          label: Text(feedbackTypeLabel(t)),
+                          label: Text(feedbackTypeLabel(translations, t)),
                           selected: selected,
                           onSelected: (_) => setState(() => _type = t),
                           selectedColor: AppColors.primary.withValues(
@@ -172,13 +174,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       controller: _subjectController,
                       decoration: _decoration(
                         _type == FeedbackType.lessonSuggestion
-                            ? 'Lesson topic'
-                            : 'Subject',
+                            ? tr('lessonTopicLabel')
+                            : tr('subjectLabel'),
                         icon: Icons.short_text,
                       ),
                       textInputAction: TextInputAction.next,
                       validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'This field is required'
+                          ? tr('fieldRequired')
                           : null,
                     ),
                     const SizedBox(height: 14),
@@ -186,14 +188,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       controller: _messageController,
                       decoration: _decoration(
                         _type == FeedbackType.lessonSuggestion
-                            ? 'What should this lesson cover?'
-                            : 'Your feedback',
+                            ? tr('whatShouldLessonCover')
+                            : tr('yourFeedbackLabel'),
                         icon: Icons.notes_outlined,
                       ),
                       maxLines: 5,
                       textInputAction: TextInputAction.newline,
                       validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'This field is required'
+                          ? tr('fieldRequired')
                           : null,
                     ),
                     if (_error != null) ...[
@@ -219,15 +221,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               ),
                             )
                           : const Icon(Icons.send_outlined, size: 18),
-                      label: const Text('Submit'),
+                      label: Text(tr('submit')),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              const Text(
-                'Your submissions',
-                style: TextStyle(
+              Text(
+                tr('yourSubmissions'),
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -250,23 +252,23 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.forum_outlined,
                         size: 32,
                         color: AppColors.textMuted,
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Text(
-                        "You haven't sent anything yet.",
-                        style: TextStyle(color: AppColors.textSecondary),
+                        tr('havenSentAnything'),
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                     ],
                   ),
                 )
               else
-                ..._mine!.map((item) => _buildFeedbackCard(item)),
+                ..._mine!.map((item) => _buildFeedbackCard(item, translations)),
             ],
           ),
         ),
@@ -274,7 +276,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     );
   }
 
-  Widget _buildFeedbackCard(FeedbackItem item) {
+  Widget _buildFeedbackCard(FeedbackItem item, Translations translations) {
     final Color statusColor;
     switch (item.status) {
       case FeedbackStatus.reviewed:
@@ -311,7 +313,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  feedbackTypeLabel(item.type),
+                  feedbackTypeLabel(translations, item.type),
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -326,7 +328,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  feedbackStatusLabel(item.status),
+                  feedbackStatusLabel(translations, item.status),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,

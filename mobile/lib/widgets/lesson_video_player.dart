@@ -2,6 +2,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import '../l10n/l10n_extension.dart';
 import '../theme/app_theme.dart';
 
 /// Streams the lesson's video from the backend's Range-enabled /media
@@ -18,7 +19,7 @@ class LessonVideoPlayer extends StatefulWidget {
 class _LessonVideoPlayerState extends State<LessonVideoPlayer> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
-  String? _error;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -50,7 +51,7 @@ class _LessonVideoPlayerState extends State<LessonVideoPlayer> {
         );
       });
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not load this video');
+      if (mounted) setState(() => _hasError = true);
     }
   }
 
@@ -63,14 +64,14 @@ class _LessonVideoPlayerState extends State<LessonVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    if (_error != null) {
+    if (_hasError) {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: ColoredBox(
           color: AppColors.surfaceHigh,
           child: Center(
             child: Text(
-              _error!,
+              context.tr('couldNotLoadVideo'),
               style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),

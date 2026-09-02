@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n_extension.dart';
 import '../models/certificate.dart';
 import '../theme/app_theme.dart';
 
@@ -19,15 +20,16 @@ class CertificateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         const Icon(Icons.workspace_premium, size: 56, color: AppColors.warning),
         const SizedBox(height: 16),
-        const Text(
-          'CERTIFICATE OF COMPLETION',
+        Text(
+          tr('certificateOfCompletion'),
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
             letterSpacing: 1,
@@ -35,10 +37,10 @@ class CertificateCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        const Text(
-          'This certifies that',
+        Text(
+          tr('thisCertifiesThat'),
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 6),
         Text(
@@ -51,10 +53,10 @@ class CertificateCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
-          'has successfully completed',
+        Text(
+          tr('hasSuccessfullyCompleted'),
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 6),
         Text(

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
 
@@ -90,7 +91,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _startResendCooldown();
       }
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -115,7 +116,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _startResendCooldown();
       }
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -123,7 +124,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _verifyCode() async {
     if (_otpCode.length != 6) {
-      setState(() => _error = 'Enter the full 6-digit code');
+      setState(() => _error = context.trRead('enterFullCode'));
       return;
     }
     setState(() {
@@ -137,7 +138,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
       if (mounted) setState(() => _step = _Step.newPassword);
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -157,16 +158,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Password reset. Please log in with your new password.',
-            ),
-          ),
+          SnackBar(content: Text(context.trRead('passwordResetSuccess'))),
         );
         context.go('/login');
       }
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -339,37 +336,44 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildPhoneStep() {
+    final tr = context.tr;
     return Form(
       key: _phoneFormKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Forgot your password?',
+          Text(
+            tr('forgotTitle'),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            "Enter the phone number linked to your account and we'll send you a verification code.",
+          Text(
+            tr('forgotSubtitle'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 24),
           TextFormField(
             controller: _phoneController,
-            decoration: _decoration('Phone number', icon: Icons.phone_outlined),
+            decoration: _decoration(
+              tr('phoneLabel'),
+              icon: Icons.phone_outlined,
+            ),
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.telephoneNumber],
             onFieldSubmitted: (_) => _sendCode(),
             validator: (v) =>
-                (v == null || v.isEmpty) ? 'Phone number is required' : null,
+                (v == null || v.isEmpty) ? tr('phoneRequired') : null,
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -390,7 +394,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('Send code'),
+                : Text(tr('sendCode')),
           ),
         ],
       ),
@@ -398,13 +402,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildOtpStep() {
+    final tr = context.tr;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Enter verification code',
+        Text(
+          tr('otpTitle'),
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
@@ -412,7 +417,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          'We sent a 6-digit code to ${_phoneController.text.trim()}',
+          tr('otpSubtitle', {'phone': _phoneController.text.trim()}),
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
@@ -446,7 +451,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'No SMS provider configured — your dev code is $_devCode. Tap to fill in.',
+                        tr('devCodeNotice', {'code': _devCode!}),
                         style: const TextStyle(
                           fontSize: 12.5,
                           color: AppColors.textSecondary,
@@ -484,7 +489,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Verify code'),
+              : Text(tr('verifyCode')),
         ),
         const SizedBox(height: 16),
         Center(
@@ -492,15 +497,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             onPressed: _resendSeconds > 0 ? null : _resendCode,
             child: Text(
               _resendSeconds > 0
-                  ? 'Resend code in ${_resendSeconds}s'
-                  : 'Resend code',
+                  ? tr('resendCodeIn', {'seconds': _resendSeconds})
+                  : tr('resendCode'),
             ),
           ),
         ),
         Center(
           child: TextButton(
             onPressed: _backToPhoneStep,
-            child: const Text('Change phone number'),
+            child: Text(tr('changePhoneNumber')),
           ),
         ),
       ],
@@ -557,32 +562,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildPasswordStep() {
+    final tr = context.tr;
     return Form(
       key: _passwordFormKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Set a new password',
+          Text(
+            tr('newPasswordTitle'),
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Choose a new password for your account.',
+          Text(
+            tr('newPasswordSubtitle'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 24),
           TextFormField(
             controller: _passwordController,
             decoration: _decoration(
-              'New password',
+              tr('newPasswordLabel'),
               icon: Icons.lock_outline,
               suffixIcon: IconButton(
                 icon: Icon(
@@ -599,22 +608,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.newPassword],
-            validator: (v) => (v == null || v.length < 8)
-                ? 'Password must be at least 8 characters'
-                : null,
+            validator: (v) =>
+                (v == null || v.length < 8) ? tr('passwordMinLength') : null,
           ),
           const SizedBox(height: 14),
           TextFormField(
             controller: _confirmController,
             decoration: _decoration(
-              'Confirm new password',
+              tr('confirmNewPasswordLabel'),
               icon: Icons.lock_outline,
             ),
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _resetPassword(),
             validator: (v) => (v != _passwordController.text)
-                ? 'Passwords do not match'
+                ? tr('passwordsDoNotMatch')
                 : null,
           ),
           if (_error != null) ...[
@@ -636,7 +644,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('Reset password'),
+                : Text(tr('resetPasswordButton')),
           ),
         ],
       ),

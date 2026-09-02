@@ -1,3 +1,5 @@
+import '../l10n/translations.dart';
+
 enum FeedbackType { feedback, lessonSuggestion }
 
 FeedbackType feedbackTypeFromJson(String value) => value == 'lesson_suggestion'
@@ -9,9 +11,9 @@ String feedbackTypeToJson(FeedbackType type) => switch (type) {
   FeedbackType.lessonSuggestion => 'lesson_suggestion',
 };
 
-String feedbackTypeLabel(FeedbackType type) => switch (type) {
-  FeedbackType.feedback => 'General feedback',
-  FeedbackType.lessonSuggestion => 'Suggest a lesson',
+String feedbackTypeLabel(Translations t, FeedbackType type) => switch (type) {
+  FeedbackType.feedback => t.t('feedbackTypeGeneral'),
+  FeedbackType.lessonSuggestion => t.t('feedbackTypeLessonSuggestion'),
 };
 
 enum FeedbackStatus { new_, reviewed, dismissed }
@@ -22,11 +24,12 @@ FeedbackStatus feedbackStatusFromJson(String value) => switch (value) {
   _ => FeedbackStatus.new_,
 };
 
-String feedbackStatusLabel(FeedbackStatus status) => switch (status) {
-  FeedbackStatus.new_ => 'Submitted',
-  FeedbackStatus.reviewed => 'Reviewed',
-  FeedbackStatus.dismissed => 'Dismissed',
-};
+String feedbackStatusLabel(Translations t, FeedbackStatus status) =>
+    switch (status) {
+      FeedbackStatus.new_ => t.t('feedbackStatusSubmitted'),
+      FeedbackStatus.reviewed => t.t('feedbackStatusReviewed'),
+      FeedbackStatus.dismissed => t.t('feedbackStatusDismissed'),
+    };
 
 class FeedbackItem {
   final int id;

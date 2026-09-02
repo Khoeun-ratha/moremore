@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/lesson.dart';
 import '../../models/quiz.dart';
 import '../../theme/app_theme.dart';
@@ -52,7 +53,7 @@ class _QuizScreenState extends State<QuizScreen> {
         _currentIndex = 0;
       });
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -82,9 +83,9 @@ class _QuizScreenState extends State<QuizScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -110,7 +111,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_quiz?.title ?? 'Quiz'),
+        title: Text(_quiz?.title ?? ''),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
@@ -126,12 +127,13 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Widget _buildBody() {
+    final tr = context.tr;
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return ErrorView(message: _error!, onRetry: _load);
 
     final quiz = _quiz!;
     if (quiz.questions.isEmpty) {
-      return const Center(child: Text('This quiz has no questions yet.'));
+      return Center(child: Text(tr('noQuestionsYet')));
     }
 
     final question = quiz.questions[_currentIndex];
@@ -150,15 +152,18 @@ class _QuizScreenState extends State<QuizScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Quiz Progress',
-                      style: TextStyle(
+                    Text(
+                      tr('quizProgress'),
+                      style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
                       ),
                     ),
                     Text(
-                      'Question ${_currentIndex + 1} of $total',
+                      tr('questionOfTotal', {
+                        'n': _currentIndex + 1,
+                        'total': total,
+                      }),
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -206,9 +211,9 @@ class _QuizScreenState extends State<QuizScreen> {
                     color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'MULTIPLE CHOICE',
-                    style: TextStyle(
+                  child: Text(
+                    tr('multipleChoice'),
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
@@ -226,9 +231,9 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Select the answer you believe is correct.',
-                  style: TextStyle(
+                Text(
+                  tr('selectAnswerHint'),
+                  style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
@@ -256,7 +261,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _currentIndex == 0 ? null : _goPrevious,
-                    child: const Text('Previous'),
+                    child: Text(tr('previous')),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -273,7 +278,9 @@ class _QuizScreenState extends State<QuizScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : Text(isLast ? 'Submit answers' : 'Next Question'),
+                        : Text(
+                            isLast ? tr('submitAnswers') : tr('nextQuestion'),
+                          ),
                   ),
                 ),
               ],

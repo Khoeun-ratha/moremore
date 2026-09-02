@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
 import '../../api/api_services.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../models/certificate.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
@@ -58,21 +59,23 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         _reviews = results[3] as List<Review>;
       });
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  static const List<String> _ratingLabels = [
-    'Poor',
-    'Fair',
-    'Good',
-    'Very Good',
-    'Excellent',
+  List<String> _ratingLabels(String Function(String) tr) => [
+    tr('ratingPoor'),
+    tr('ratingFair'),
+    tr('ratingGood'),
+    tr('ratingVeryGood'),
+    tr('ratingExcellent'),
   ];
 
   Future<void> _openReviewDialog() async {
+    final tr = context.tr;
+    final ratingLabels = _ratingLabels(tr);
     final course = _course!;
     var rating = 5;
     final commentController = TextEditingController();
@@ -87,9 +90,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ),
           titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
           contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-          title: const Text(
-            'Rate this course',
-            style: TextStyle(
+          title: Text(
+            tr('rateThisCourse'),
+            style: const TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -119,7 +122,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                _ratingLabels[rating - 1],
+                ratingLabels[rating - 1],
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 13,
@@ -136,7 +139,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   color: AppColors.textPrimary,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Share your thoughts (optional)',
+                  hintText: tr('shareYourThoughts'),
                   hintStyle: const TextStyle(color: AppColors.textMuted),
                   filled: true,
                   fillColor: AppColors.surfaceHigh,
@@ -163,14 +166,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: const Text('Cancel'),
+                    child: Text(tr('cancel')),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: () => Navigator.of(dialogContext).pop(true),
-                    child: const Text('Submit'),
+                    child: Text(tr('submit')),
                   ),
                 ),
               ],
@@ -190,26 +193,27 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       if (mounted) _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_course?.title ?? 'Course'),
+          title: Text(_course?.title ?? ''),
           bottom: _loading || _error != null
               ? null
-              : const TabBar(
+              : TabBar(
                   tabs: [
-                    Tab(text: 'Lessons'),
-                    Tab(text: 'Reviews'),
+                    Tab(text: tr('lessonsTab')),
+                    Tab(text: tr('reviewsTab')),
                   ],
                 ),
         ),
@@ -309,7 +313,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ],
           const SizedBox(height: 24),
           Text(
-            '${lessons.length} lesson${lessons.length == 1 ? '' : 's'}',
+            context.trPlural('lessonsHeader', lessons.length),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -324,6 +328,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   }
 
   Widget _buildCourseCompleteBanner(int courseId) {
+    final tr = context.tr;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -347,10 +352,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Course complete! Your certificate is ready.',
-              style: TextStyle(
+              tr('courseCompleteBanner'),
+              style: const TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -367,7 +372,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('View'),
+                : Text(tr('view')),
           ),
         ],
       ),
@@ -388,11 +393,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       if (!mounted) return;
       if (certificate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Certificate is still being issued — try again shortly.',
-            ),
-          ),
+          SnackBar(content: Text(context.trRead('certificateStillIssuing'))),
         );
         return;
       }
@@ -402,9 +403,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(extractErrorMessage(e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
       }
     } finally {
       if (mounted) setState(() => _loadingCertificate = false);
@@ -416,6 +417,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   /// lesson gets a highlighted "current" card, and everything after it is
   /// shown locked. Matches the sequential-unlock model in `_lessons`.
   List<Widget> _buildLessonStepper(List<Lesson> lessons) {
+    final tr = context.tr;
     final completed = <Lesson>[];
     Lesson? current;
     final locked = <Lesson>[];
@@ -453,8 +455,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     children: [
                       Text(
                         completed.length == 1
-                            ? 'Lesson 1 · Completed'
-                            : 'Lessons 1–${completed.length} · Completed',
+                            ? tr('lessonSingularCompleted')
+                            : tr('lessonsRangeCompleted', {
+                                'n': completed.length,
+                              }),
                         style: const TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w600,
@@ -464,8 +468,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       const SizedBox(height: 2),
                       Text(
                         _showCompletedLessons
-                            ? 'Tap to collapse'
-                            : 'All passed · tap to review',
+                            ? tr('tapToCollapse')
+                            : tr('allPassedTapToReview'),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -500,7 +504,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               isLast: isLastOfCompleted && current == null && locked.isEmpty,
               child: _lessonRow(
                 completed[i],
-                subtitle: 'Completed',
+                subtitle: tr('lessonCompleted'),
                 onTap: () => context.push('/lessons/${completed[i].id}'),
               ),
             ),
@@ -538,13 +542,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           isLast: i == locked.length - 1,
           child: _lessonRow(
             locked[i],
-            subtitle: 'Locked',
+            subtitle: tr('locked'),
             muted: true,
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Complete the previous lesson first.'),
-                ),
+                SnackBar(content: Text(tr('completeThePreviousLessonFirst'))),
               );
             },
           ),
@@ -663,6 +665,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   }
 
   Widget _currentLessonCard(Lesson lesson) {
+    final tr = context.tr;
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => context.push('/lessons/${lesson.id}'),
@@ -683,7 +686,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                'LESSON ${lesson.orderIndex + 1}',
+                tr('lessonNumberBadge', {'n': lesson.orderIndex + 1}),
                 style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
@@ -704,8 +707,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             const SizedBox(height: 3),
             Text(
               lesson.hasQuiz
-                  ? 'Includes a quiz'
-                  : 'Lesson ${lesson.orderIndex + 1}',
+                  ? tr('includesAQuiz')
+                  : tr('lessonN', {'n': lesson.orderIndex + 1}),
               style: const TextStyle(
                 fontSize: 12.5,
                 color: AppColors.textSecondary,
@@ -718,7 +721,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               child: FilledButton.icon(
                 onPressed: () => context.push('/lessons/${lesson.id}'),
                 icon: const Icon(Icons.arrow_forward, size: 16),
-                label: const Text('Continue'),
+                label: Text(tr('continueButton')),
               ),
             ),
           ],
@@ -728,6 +731,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   }
 
   Widget _buildProgressCard(CourseProgress progress) {
+    final tr = context.tr;
     final percentage = (progress.percentage / 100).clamp(0, 1).toDouble();
     return Container(
       padding: const EdgeInsets.all(16),
@@ -742,9 +746,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Your progress',
-                style: TextStyle(
+              Text(
+                tr('yourProgress'),
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
@@ -772,7 +776,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${progress.completedLessons} of ${progress.totalLessons} lessons complete',
+            tr('lessonsCompleteCount', {
+              'completed': progress.completedLessons,
+              'total': progress.totalLessons,
+            }),
             style: const TextStyle(
               fontSize: 12.5,
               color: AppColors.textSecondary,
@@ -807,6 +814,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   }
 
   Widget _buildReviewsTab() {
+    final tr = context.tr;
     final course = _course!;
     final reviews = _reviews!;
 
@@ -822,7 +830,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           FilledButton.icon(
             onPressed: _openReviewDialog,
             icon: const Icon(Icons.star_outline),
-            label: const Text('Write a Review'),
+            label: Text(tr('writeAReview')),
           ),
           const SizedBox(height: 20),
           if (reviews.isEmpty)
@@ -835,16 +843,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               ),
               child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.rate_review_outlined,
                     size: 32,
                     color: AppColors.textMuted,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'No reviews yet — be the first to leave one.',
+                  Text(
+                    tr('noReviewsYet'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -892,7 +900,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               ),
               const SizedBox(height: 3),
               Text(
-                '${course.reviewCount} review${course.reviewCount == 1 ? '' : 's'}',
+                context.trPlural('reviewCount', course.reviewCount),
                 style: const TextStyle(
                   fontSize: 12.5,
                   color: AppColors.textSecondary,

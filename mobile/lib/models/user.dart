@@ -1,3 +1,5 @@
+import '../l10n/translations.dart';
+
 enum UserRole { user, admin }
 
 UserRole userRoleFromJson(String value) =>
@@ -20,11 +22,11 @@ String genderToJson(Gender gender) => switch (gender) {
   Gender.preferNotToSay => 'prefer_not_to_say',
 };
 
-String genderLabel(Gender gender) => switch (gender) {
-  Gender.male => 'Male',
-  Gender.female => 'Female',
-  Gender.other => 'Other',
-  Gender.preferNotToSay => 'Prefer not to say',
+String genderLabel(Translations t, Gender gender) => switch (gender) {
+  Gender.male => t.t('genderMale'),
+  Gender.female => t.t('genderFemale'),
+  Gender.other => t.t('genderOther'),
+  Gender.preferNotToSay => t.t('genderPreferNotToSay'),
 };
 
 class AppUser {

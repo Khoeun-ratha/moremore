@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_error.dart';
+import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -40,13 +41,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         _newController.text,
       );
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Password changed.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.trRead('passwordChanged'))),
+        );
         context.pop();
       }
     } catch (e) {
-      setState(() => _error = extractErrorMessage(e));
+      if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -54,8 +55,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     return Scaffold(
-      appBar: AppBar(title: const Text('Change Password')),
+      appBar: AppBar(title: Text(tr('changePasswordTitle'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -66,40 +68,40 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               children: [
                 TextFormField(
                   controller: _currentController,
-                  decoration: const InputDecoration(
-                    labelText: 'Current password',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: tr('currentPasswordLabel'),
+                    border: const OutlineInputBorder(),
                   ),
                   obscureText: true,
                   autofillHints: const [AutofillHints.password],
                   validator: (v) => (v == null || v.isEmpty)
-                      ? 'Current password is required'
+                      ? tr('currentPasswordRequired')
                       : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _newController,
-                  decoration: const InputDecoration(
-                    labelText: 'New password',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: tr('newPasswordLabel'),
+                    border: const OutlineInputBorder(),
                   ),
                   obscureText: true,
                   autofillHints: const [AutofillHints.newPassword],
                   validator: (v) => (v == null || v.length < 8)
-                      ? 'Password must be at least 8 characters'
+                      ? tr('passwordMinLength')
                       : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _confirmController,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm new password',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: tr('confirmNewPasswordLabel'),
+                    border: const OutlineInputBorder(),
                   ),
                   obscureText: true,
                   onFieldSubmitted: (_) => _submit(),
                   validator: (v) => (v != _newController.text)
-                      ? 'Passwords do not match'
+                      ? tr('passwordsDoNotMatch')
                       : null,
                 ),
                 if (_error != null) ...[
@@ -120,7 +122,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Change Password'),
+                      : Text(tr('changePasswordButton')),
                 ),
               ],
             ),

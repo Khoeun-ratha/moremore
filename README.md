@@ -24,7 +24,7 @@ python -m venv .venv
 source .venv/Scripts/activate
 pip install -r requirements.txt
 alembic upgrade head
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0
 ```
 
 macOS / Linux:
@@ -35,10 +35,13 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 alembic upgrade head
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0
 ```
 
 Serves the API at http://localhost:8000 (Swagger UI at `/docs`). Uses the existing `backend/.env`.
+`--host 0.0.0.0` is what lets a physical phone on the same Wi-Fi reach it — with the uvicorn default
+(`127.0.0.1`) only this machine can connect, so the mobile app's login/register would fail with a
+connection error even though the backend is running fine.
 
 Or with Docker (also starts MySQL and Adminer):
 

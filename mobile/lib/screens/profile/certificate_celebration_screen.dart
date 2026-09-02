@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/l10n_extension.dart';
 import '../../models/certificate.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
@@ -51,6 +52,7 @@ class _CertificateCelebrationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final certificate = widget.certificate;
     final learnerName = context.watch<AuthStore>().user?.fullName ?? '';
 
@@ -107,9 +109,9 @@ class _CertificateCelebrationScreenState
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Course Complete!',
-                      style: TextStyle(
+                    Text(
+                      tr('courseCompleteExclaim'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
@@ -117,7 +119,9 @@ class _CertificateCelebrationScreenState
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "You've finished ${certificate.courseTitle} — nice work.",
+                      tr('finishedCourseNiceWork', {
+                        'course': certificate.courseTitle,
+                      }),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white70,
@@ -145,7 +149,7 @@ class _CertificateCelebrationScreenState
                         child: CertificateCard(
                           certificate: certificate,
                           learnerName: learnerName.isEmpty
-                              ? 'You'
+                              ? tr('learnerNameFallback')
                               : learnerName,
                         ),
                       ),
@@ -171,7 +175,9 @@ class _CertificateCelebrationScreenState
                               )
                             : const Icon(Icons.download_outlined),
                         label: Text(
-                          _saving ? 'Saving...' : 'Download Certificate',
+                          _saving
+                              ? tr('savingEllipsis')
+                              : tr('downloadCertificate'),
                         ),
                       ),
                     ),
@@ -185,7 +191,7 @@ class _CertificateCelebrationScreenState
                           side: const BorderSide(color: Colors.white54),
                         ),
                         onPressed: () => context.go('/courses'),
-                        child: const Text('Continue Learning'),
+                        child: Text(tr('continueLearningButton')),
                       ),
                     ),
                   ],
