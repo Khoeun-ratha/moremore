@@ -19,6 +19,7 @@
   "navCourses": "វគ្គសិក្សា",
   "navProgress": "វឌ្ឍនភាព",
   "navProfile": "គណនី",
+  "navGame": "ល្បែង",
 
   "loginWelcomeBack": "សូមស្វាគមន៍ការត្រឡប់មកវិញ",
   "loginSubtitle": "ចូលគណនីដើម្បីបន្តការសិក្សា",
@@ -138,6 +139,17 @@
   "nextQuestion": "សំណួរបន្ទាប់",
   "submitAnswers": "ដាក់ស្នើចម្លើយ",
   "noQuestionsYet": "លំហាត់សាកល្បងនេះមិនទាន់មានសំណួរទេ។",
+
+  "quickChallenge": "ល្បែងប្រកួតរហ័ស",
+  "quickChallengeSubtitle": "សំណួរចៃដន្យពីអ្វីៗដែលអ្នកកំពុងរៀន",
+  "practiceThisCourse": "អនុវត្តវគ្គសិក្សានេះ",
+  "practiceThisCourseSubtitle": "សំណួរចៃដន្យពីលំហាត់សាកល្បងក្នុងវគ្គសិក្សានេះ",
+  "gameTitle": "ល្បែងប្រកួតរហ័ស",
+  "gameResultsTitle": "លទ្ធផលការប្រកួត",
+  "playAgain": "លេងម្ដងទៀត",
+  "backToHome": "ត្រឡប់ទៅទំព័រដើម",
+  "correctFeedback": "ត្រឹមត្រូវ!",
+  "incorrectFeedback": "មិនត្រឹមត្រូវទេ — ចម្លើយត្រឹមត្រូវត្រូវបានបន្លិច",
 
   "quizResultsTitle": "លទ្ធផលលំហាត់សាកល្បង",
   "attemptDetailsTitle": "ព័ត៌មានលម្អិតការសាកល្បង",

@@ -7,7 +7,7 @@ import { mediaUrl } from '../utils/media'
 
 const props = defineProps<{
   kind: FileKind
-  modelValue: string | null
+  modelValue: string | null | undefined
 }>()
 
 const emit = defineEmits<{

@@ -757,6 +757,7 @@ def main() -> None:
         for table in (
             "quiz_attempt_answers",
             "quiz_attempts",
+            "game_attempts",
             "lesson_progress",
             "choices",
             "questions",
@@ -780,6 +781,7 @@ def main() -> None:
             "course_reviews",
             "quiz_attempts",
             "quiz_attempt_answers",
+            "game_attempts",
             "lesson_progress",
         ):
             db.execute(text(f"ALTER TABLE {table} AUTO_INCREMENT = 1"))

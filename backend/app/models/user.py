@@ -43,6 +43,7 @@ class User(Base):
     certificates: Mapped[list["Certificate"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     course_reviews: Mapped[list["CourseReview"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     feedback_items: Mapped[list["Feedback"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    game_attempts: Mapped[list["GameAttempt"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class RefreshToken(Base):

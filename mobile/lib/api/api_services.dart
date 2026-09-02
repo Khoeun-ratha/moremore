@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'certificates_api.dart';
 import 'courses_api.dart';
 import 'feedback_api.dart';
+import 'games_api.dart';
 import 'lessons_api.dart';
 import 'progress_api.dart';
 import 'quizzes_api.dart';
@@ -15,7 +16,8 @@ class ApiServices {
       quizzes = QuizzesApi(dio),
       progress = ProgressApi(dio),
       certificates = CertificatesApi(dio),
-      feedback = FeedbackApi(dio);
+      feedback = FeedbackApi(dio),
+      games = GamesApi(dio);
 
   final CoursesApi courses;
   final LessonsApi lessons;
@@ -23,4 +25,5 @@ class ApiServices {
   final ProgressApi progress;
   final CertificatesApi certificates;
   final FeedbackApi feedback;
+  final GamesApi games;
 }

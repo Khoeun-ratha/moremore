@@ -6,6 +6,7 @@ from app.api.v1.endpoints import (
     courses,
     feedback,
     files,
+    games,
     lessons,
     progress,
     quizzes,
@@ -24,3 +25,4 @@ api_router.include_router(progress.router)
 api_router.include_router(certificates.router)
 api_router.include_router(reviews.router)
 api_router.include_router(feedback.router)
+api_router.include_router(games.router)

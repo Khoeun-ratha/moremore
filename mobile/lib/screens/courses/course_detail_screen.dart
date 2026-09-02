@@ -13,6 +13,7 @@ import '../../models/progress.dart';
 import '../../models/review.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
+import '../../widgets/game_entry_card.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   const CourseDetailScreen({super.key, required this.courseId});
@@ -307,6 +308,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ),
           const SizedBox(height: 20),
           _buildProgressCard(progress),
+          const SizedBox(height: 16),
+          GameEntryCard(
+            title: context.tr('practiceThisCourse'),
+            subtitle: context.tr('practiceThisCourseSubtitle'),
+            onTap: () => context.push('/games', extra: course.id),
+          ),
           if (progress.percentage >= 100) ...[
             const SizedBox(height: 16),
             _buildCourseCompleteBanner(course.id),

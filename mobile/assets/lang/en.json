@@ -19,6 +19,7 @@
   "navCourses": "Courses",
   "navProgress": "Progress",
   "navProfile": "Profile",
+  "navGame": "Game",
 
   "loginWelcomeBack": "Welcome back",
   "loginSubtitle": "Log in to continue learning",
@@ -140,6 +141,17 @@
   "nextQuestion": "Next Question",
   "submitAnswers": "Submit answers",
   "noQuestionsYet": "This quiz has no questions yet.",
+
+  "quickChallenge": "Quick Challenge",
+  "quickChallengeSubtitle": "Random questions from everything you're learning",
+  "practiceThisCourse": "Practice This Course",
+  "practiceThisCourseSubtitle": "Random questions from this course's quizzes",
+  "gameTitle": "Quick Challenge",
+  "gameResultsTitle": "Challenge Results",
+  "playAgain": "Play Again",
+  "backToHome": "Back to Home",
+  "correctFeedback": "Correct!",
+  "incorrectFeedback": "Not quite — the correct answer is highlighted",
 
   "quizResultsTitle": "Quiz Results",
   "attemptDetailsTitle": "Attempt Details",

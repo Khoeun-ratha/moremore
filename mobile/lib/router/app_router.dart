@@ -6,6 +6,8 @@ import '../screens/auth/register_screen.dart';
 import '../models/certificate.dart';
 import '../screens/courses/course_detail_screen.dart';
 import '../screens/courses/course_list_screen.dart';
+import '../screens/games/game_result_screen.dart';
+import '../screens/games/game_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/lessons/lesson_screen.dart';
 import '../screens/profile/certificate_celebration_screen.dart';
@@ -184,6 +186,26 @@ GoRouter buildAppRouter(AuthStore authStore) {
             attemptId: int.parse(state.pathParameters['id']!),
           ),
         ),
+      ),
+      GoRoute(
+        path: '/games',
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: GameScreen(courseId: state.extra as int?),
+        ),
+      ),
+      GoRoute(
+        path: '/game-result',
+        pageBuilder: (context, state) {
+          final args = state.extra as GameResultArgs;
+          return buildPageWithTransition(
+            state: state,
+            child: GameResultScreen(
+              result: args.result,
+              courseId: args.courseId,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/certificate-celebration',

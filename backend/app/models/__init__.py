@@ -2,6 +2,7 @@ from app.db.base import Base
 from app.models.certificate import Certificate
 from app.models.course import Course, Lesson
 from app.models.feedback import Feedback
+from app.models.game import GameAttempt
 from app.models.progress import LessonProgress
 from app.models.quiz import Choice, Question, Quiz, QuizAttempt, QuizAttemptAnswer
 from app.models.review import CourseReview
@@ -23,4 +24,5 @@ __all__ = [
     "Certificate",
     "CourseReview",
     "Feedback",
+    "GameAttempt",
 ]

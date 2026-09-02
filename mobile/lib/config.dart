@@ -7,7 +7,7 @@
 class AppConfig {
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.6:8000/api/v1',
+    defaultValue: 'http://192.168.9.107:8000/api/v1',
   );
 
   /// Root origin (no /api/v1 suffix) — used to resolve relative media URLs
