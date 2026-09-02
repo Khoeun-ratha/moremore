@@ -74,7 +74,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   ];
 
   Future<void> _openReviewDialog() async {
-    final tr = context.tr;
+    final tr = context.trRead;
     final ratingLabels = _ratingLabels(tr);
     final course = _course!;
     var rating = 5;
