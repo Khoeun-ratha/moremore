@@ -153,6 +153,15 @@
   "correctFeedback": "Correct!",
   "incorrectFeedback": "Not quite — the correct answer is highlighted",
 
+  "gameHubTitle": "Games",
+  "bestScoreLabel": "Best Score",
+  "yourRankLabel": "Your Rank",
+  "runsPlayedLabel": "Runs Played",
+  "playSectionHeader": "Play",
+  "viewLeaderboard": "View Leaderboard",
+  "leaderboardTitle": "Leaderboard",
+  "noLeaderboardEntries": "No scores yet — be the first!",
+
   "quizResultsTitle": "Quiz Results",
   "attemptDetailsTitle": "Attempt Details",
   "greatJob": "Great job!",

@@ -128,3 +128,71 @@ def test_my_attempts_only_shows_own_history(client, admin_headers, user_headers)
 
     admin_history = client.get("/api/v1/games/my-attempts", headers=admin_headers).json()
     assert admin_history == []
+
+
+def test_leaderboard_requires_auth(client):
+    resp = client.get("/api/v1/games/leaderboard")
+    assert resp.status_code == 401
+
+
+def test_leaderboard_empty_when_nobody_has_played(client, user_headers):
+    resp = client.get("/api/v1/games/leaderboard", headers=user_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_leaderboard_ranks_by_best_percentage_per_user(client, admin_headers, user_headers):
+    from tests.conftest import _register_and_login
+
+    _course, lesson = _create_course_and_lesson(client, admin_headers)
+    _create_quiz(client, admin_headers, lesson["id"], n_questions=4)
+
+    other_headers = _register_and_login(client, "other-player@example.com")
+
+    def play(headers, n_correct):
+        questions = client.get("/api/v1/games/random-quiz", headers=headers).json()
+        answers = []
+        for i, q in enumerate(questions):
+            correct_choice = next(c for c in q["choices"] if c["is_correct"])
+            wrong_choice = next(c for c in q["choices"] if not c["is_correct"])
+            choice = correct_choice if i < n_correct else wrong_choice
+            answers.append({"question_id": q["id"], "choice_id": choice["id"]})
+        return client.post("/api/v1/games/random-quiz/submit", json={"answers": answers}, headers=headers).json()
+
+    low_score = play(user_headers, n_correct=1)  # 25%
+    high_score = play(other_headers, n_correct=3)  # 75%
+    assert high_score["percentage"] > low_score["percentage"]
+
+    resp = client.get("/api/v1/games/leaderboard", headers=user_headers)
+    assert resp.status_code == 200
+    board = resp.json()
+    assert len(board) == 2
+    assert board[0]["percentage"] == high_score["percentage"]
+    assert board[0]["rank"] == 1
+    assert board[1]["percentage"] == low_score["percentage"]
+    assert board[1]["rank"] == 2
+    assert {entry["full_name"] for entry in board} == {"Test User"}  # conftest registers all as "Test User"
+
+
+def test_leaderboard_keeps_only_best_round_per_user(client, admin_headers, user_headers):
+    _course, lesson = _create_course_and_lesson(client, admin_headers)
+    _create_quiz(client, admin_headers, lesson["id"], n_questions=4)
+
+    def play(n_correct):
+        questions = client.get("/api/v1/games/random-quiz", headers=user_headers).json()
+        answers = []
+        for i, q in enumerate(questions):
+            correct_choice = next(c for c in q["choices"] if c["is_correct"])
+            wrong_choice = next(c for c in q["choices"] if not c["is_correct"])
+            choice = correct_choice if i < n_correct else wrong_choice
+            answers.append({"question_id": q["id"], "choice_id": choice["id"]})
+        client.post("/api/v1/games/random-quiz/submit", json={"answers": answers}, headers=user_headers)
+
+    for n_correct in (1, 4, 2):  # worst, best, middling
+        play(n_correct)
+
+    board = client.get("/api/v1/games/leaderboard", headers=user_headers).json()
+    assert len(board) == 1  # one row despite three rounds
+    assert board[0]["score"] == 4
+    assert board[0]["total"] == 4
+    assert board[0]["percentage"] == 100.0

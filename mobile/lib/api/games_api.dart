@@ -38,4 +38,14 @@ class GamesApi {
         .map((e) => GameAttempt.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<LeaderboardEntry>> leaderboard({int limit = 20}) async {
+    final response = await _dio.get<List<dynamic>>(
+      '/games/leaderboard',
+      queryParameters: {'limit': limit},
+    );
+    return response.data!
+        .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }

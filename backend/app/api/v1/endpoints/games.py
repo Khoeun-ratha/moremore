@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db
 from app.models.game import GameAttempt
 from app.models.user import User
-from app.schemas.game import GameAttemptOut, GameQuestionOut, GameResult, GameSubmission
-from app.services.game_service import get_random_questions, submit_game
+from app.schemas.game import GameAttemptOut, GameQuestionOut, GameResult, GameSubmission, LeaderboardEntryOut
+from app.services.game_service import get_leaderboard, get_random_questions, submit_game
 
 router = APIRouter(prefix="/games", tags=["games"])
 
@@ -41,3 +41,13 @@ def my_game_attempts(db: Session = Depends(get_db), user: User = Depends(get_cur
         .limit(20)
         .all()
     )
+
+
+@router.get("/leaderboard", response_model=list[LeaderboardEntryOut])
+def quick_challenge_leaderboard(
+    limit: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Every player's single best Quick Challenge round, ranked by score."""
+    return get_leaderboard(db, limit=limit)

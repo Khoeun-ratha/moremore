@@ -84,8 +84,17 @@ class GameResultScreen extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () =>
-                      context.pushReplacement('/games', extra: courseId),
+                      context.pushReplacement('/games/quick', extra: courseId),
                   child: Text(tr('playAgain')),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/leaderboard'),
+                  icon: const Icon(Icons.leaderboard_outlined),
+                  label: Text(tr('viewLeaderboard')),
                 ),
               ),
               const SizedBox(height: 12),

@@ -151,6 +151,15 @@
   "correctFeedback": "ត្រឹមត្រូវ!",
   "incorrectFeedback": "មិនត្រឹមត្រូវទេ — ចម្លើយត្រឹមត្រូវត្រូវបានបន្លិច",
 
+  "gameHubTitle": "ល្បែង",
+  "bestScoreLabel": "ពិន្ទុល្អបំផុត",
+  "yourRankLabel": "ចំណាត់ថ្នាក់របស់អ្នក",
+  "runsPlayedLabel": "ចំនួនដងលេង",
+  "playSectionHeader": "លេង",
+  "viewLeaderboard": "មើលតារាងចំណាត់ថ្នាក់",
+  "leaderboardTitle": "តារាងចំណាត់ថ្នាក់",
+  "noLeaderboardEntries": "មិនទាន់មានពិន្ទុនៅឡើយទេ — ក្លាយជាអ្នកដំបូង!",
+
   "quizResultsTitle": "លទ្ធផលលំហាត់សាកល្បង",
   "attemptDetailsTitle": "ព័ត៌មានលម្អិតការសាកល្បង",
   "greatJob": "ធ្វើបានល្អណាស់!",

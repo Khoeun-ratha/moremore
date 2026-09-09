@@ -6,7 +6,8 @@ from app.core.exceptions import AppError
 from app.models.course import Lesson
 from app.models.game import GameAttempt
 from app.models.quiz import Question, Quiz
-from app.schemas.game import GameResult, GameSubmission
+from app.models.user import User
+from app.schemas.game import GameResult, GameSubmission, LeaderboardEntryOut
 from app.schemas.quiz import AnswerResult
 
 
@@ -86,3 +87,55 @@ def submit_game(db: Session, user_id: int, course_id: int | None, submission: Ga
         submitted_at=attempt.submitted_at,
         answers=results,
     )
+
+
+def get_leaderboard(db: Session, limit: int = 20) -> list[LeaderboardEntryOut]:
+    """Each player's single best Quick Challenge round, ranked by score
+    percentage — ties broken by the higher raw score, then whoever set it
+    first. Computed in Python: attempt volume is small enough that a plain
+    scan is simpler and clearer than a SQL ratio comparison."""
+    attempts = (
+        db.query(GameAttempt, User)
+        .join(User, User.id == GameAttempt.user_id)
+        .filter(GameAttempt.total > 0)
+        .all()
+    )
+
+    best_by_user: dict[int, tuple[GameAttempt, User]] = {}
+    for attempt, user in attempts:
+        current = best_by_user.get(user.id)
+        if current is None:
+            best_by_user[user.id] = (attempt, user)
+            continue
+        current_attempt, _ = current
+        current_pct = current_attempt.score / current_attempt.total
+        candidate_pct = attempt.score / attempt.total
+        better = (
+            candidate_pct > current_pct
+            or (candidate_pct == current_pct and attempt.score > current_attempt.score)
+            or (
+                candidate_pct == current_pct
+                and attempt.score == current_attempt.score
+                and attempt.submitted_at < current_attempt.submitted_at
+            )
+        )
+        if better:
+            best_by_user[user.id] = (attempt, user)
+
+    ranked = sorted(
+        best_by_user.values(),
+        key=lambda pair: (-(pair[0].score / pair[0].total), -pair[0].score, pair[0].submitted_at),
+    )
+
+    return [
+        LeaderboardEntryOut(
+            rank=i + 1,
+            user_id=user.id,
+            full_name=user.full_name,
+            score=attempt.score,
+            total=attempt.total,
+            percentage=round((attempt.score / attempt.total) * 100, 2),
+            achieved_at=attempt.submitted_at,
+        )
+        for i, (attempt, user) in enumerate(ranked[:limit])
+    ]

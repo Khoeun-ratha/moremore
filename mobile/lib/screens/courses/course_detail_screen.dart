@@ -312,7 +312,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           GameEntryCard(
             title: context.tr('practiceThisCourse'),
             subtitle: context.tr('practiceThisCourseSubtitle'),
-            onTap: () => context.push('/games', extra: course.id),
+            onTap: () => context.push('/games/quick', extra: course.id),
           ),
           if (progress.percentage >= 100) ...[
             const SizedBox(height: 16),

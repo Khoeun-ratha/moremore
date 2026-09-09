@@ -35,3 +35,16 @@ class GameAttemptOut(BaseModel):
     score: int
     total: int
     submitted_at: datetime
+
+
+class LeaderboardEntryOut(BaseModel):
+    """A player's single best Quick Challenge round, ranked by score
+    percentage (ties broken by raw score, then who got there first)."""
+
+    rank: int
+    user_id: int
+    full_name: str
+    score: int
+    total: int
+    percentage: float
+    achieved_at: datetime

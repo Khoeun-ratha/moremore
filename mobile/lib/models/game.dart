@@ -82,3 +82,36 @@ class GameAttempt {
     submittedAt: DateTime.parse(json['submitted_at'] as String),
   );
 }
+
+/// A player's single best Quick Challenge round, ranked by score
+/// percentage.
+class LeaderboardEntry {
+  final int rank;
+  final int userId;
+  final String fullName;
+  final int score;
+  final int total;
+  final double percentage;
+  final DateTime achievedAt;
+
+  LeaderboardEntry({
+    required this.rank,
+    required this.userId,
+    required this.fullName,
+    required this.score,
+    required this.total,
+    required this.percentage,
+    required this.achievedAt,
+  });
+
+  factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
+      LeaderboardEntry(
+        rank: json['rank'] as int,
+        userId: json['user_id'] as int,
+        fullName: json['full_name'] as String,
+        score: json['score'] as int,
+        total: json['total'] as int,
+        percentage: (json['percentage'] as num).toDouble(),
+        achievedAt: DateTime.parse(json['achieved_at'] as String),
+      );
+}

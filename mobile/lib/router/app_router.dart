@@ -6,8 +6,10 @@ import '../screens/auth/register_screen.dart';
 import '../models/certificate.dart';
 import '../screens/courses/course_detail_screen.dart';
 import '../screens/courses/course_list_screen.dart';
+import '../screens/games/game_home_screen.dart';
 import '../screens/games/game_result_screen.dart';
 import '../screens/games/game_screen.dart';
+import '../screens/games/leaderboard_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/lessons/lesson_screen.dart';
 import '../screens/profile/certificate_celebration_screen.dart';
@@ -191,6 +193,13 @@ GoRouter buildAppRouter(AuthStore authStore) {
         path: '/games',
         pageBuilder: (context, state) => buildPageWithTransition(
           state: state,
+          child: const GameHomeScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/games/quick',
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
           child: GameScreen(courseId: state.extra as int?),
         ),
       ),
@@ -206,6 +215,13 @@ GoRouter buildAppRouter(AuthStore authStore) {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/leaderboard',
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const LeaderboardScreen(),
+        ),
       ),
       GoRoute(
         path: '/certificate-celebration',
