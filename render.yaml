@@ -33,7 +33,6 @@ services:
   - type: web
     name: moremore-admin
     runtime: static
-    plan: free
     buildCommand: cd admin && npm install && npm run build
     staticPublishPath: admin/dist
     envVars:
