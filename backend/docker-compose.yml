@@ -1,18 +1,17 @@
 services:
-  mysql:
-    image: mysql:8.0
+  postgres:
+    image: postgres:16
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: learning_platform
-      MYSQL_USER: learning_user
-      MYSQL_PASSWORD: learning_pass
-      MYSQL_ROOT_PASSWORD: root_dev_password
+      POSTGRES_DB: learning_platform
+      POSTGRES_USER: learning_user
+      POSTGRES_PASSWORD: learning_pass
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_dev_password"]
+      test: ["CMD-SHELL", "pg_isready -U learning_user -d learning_platform"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -23,13 +22,13 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: mysql+pymysql://learning_user:learning_pass@mysql:3306/learning_platform
+      DATABASE_URL: postgresql://learning_user:learning_pass@postgres:5432/learning_platform
     ports:
       - "8000:8000"
     volumes:
       - ./media:/app/media
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
 
   adminer:
@@ -38,7 +37,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - mysql
+      - postgres
 
 volumes:
-  mysql_data:
+  postgres_data:

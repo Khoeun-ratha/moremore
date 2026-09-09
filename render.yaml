@@ -9,8 +9,6 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
-      - key: DATABASE_SSL_CA_PATH
-        value: /etc/secrets/aiven-ca.pem
       - key: SECRET_KEY
         generateValue: true
       - key: ALGORITHM

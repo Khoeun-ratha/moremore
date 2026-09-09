@@ -10,9 +10,10 @@ def make_engine(database_url: str, ssl_ca_path: str = ""):
     connect_args = {}
     if database_url.startswith("sqlite"):
         connect_args = {"check_same_thread": False}
-    elif ssl_ca_path:
-        # Required for managed MySQL hosts like Aiven that enforce verified TLS.
+    elif ssl_ca_path and database_url.startswith("mysql"):
         connect_args = {"ssl": {"ca": ssl_ca_path}}
+    elif ssl_ca_path and database_url.startswith("postgresql"):
+        connect_args = {"sslmode": "verify-ca", "sslrootcert": ssl_ca_path}
     return create_engine(database_url, connect_args=connect_args, pool_pre_ping=True)
 
 

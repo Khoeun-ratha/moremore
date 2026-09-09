@@ -7,7 +7,7 @@ will also include a React/Vue admin panel and a Flutter mobile app (built agains
 ## Stack
 
 - FastAPI + Pydantic v2
-- SQLAlchemy 2.0 (sync) + PyMySQL, targeting MySQL 8
+- SQLAlchemy 2.0 (sync) + psycopg2, targeting PostgreSQL 16
 - Alembic migrations
 - JWT auth (access + DB-revocable refresh tokens), bcrypt password hashing
 - Local disk file storage for videos/PDFs/images, served via `StaticFiles` (supports HTTP Range
@@ -21,7 +21,7 @@ cp .env.example .env   # edit SECRET_KEY and other values
 docker compose up --build
 ```
 
-This starts MySQL, runs `alembic upgrade head`, and serves the API at http://localhost:8000.
+This starts PostgreSQL, runs `alembic upgrade head`, and serves the API at http://localhost:8000.
 Swagger UI: http://localhost:8000/docs. Adminer (DB browser): http://localhost:8080.
 
 ## Getting started (local, no Docker)
@@ -30,7 +30,7 @@ Swagger UI: http://localhost:8000/docs. Adminer (DB browser): http://localhost:8
 python -m venv .venv
 source .venv/bin/activate   # .venv\Scripts\activate on Windows
 pip install -r requirements.txt
-cp .env.example .env        # point DATABASE_URL at your MySQL instance
+cp .env.example .env        # point DATABASE_URL at your PostgreSQL instance
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
@@ -38,8 +38,8 @@ uvicorn app.main:app --reload
 ## Running tests
 
 The test suite runs against `TEST_DATABASE_URL` (see `tests/conftest.py`). It defaults to a local
-SQLite file so it runs anywhere without extra setup; point it at a real MySQL schema in CI for full
-dialect parity before deploying.
+SQLite file so it runs anywhere without extra setup; point it at a real PostgreSQL schema in CI for
+full dialect parity before deploying.
 
 ```bash
 pytest
