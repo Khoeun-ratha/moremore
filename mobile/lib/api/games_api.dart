@@ -7,7 +7,7 @@ class GamesApi {
   GamesApi(this._dio);
   final Dio _dio;
 
-  Future<List<GameQuestion>> randomQuiz({int? courseId, int count = 10}) async {
+  Future<List<GameQuestion>> randomQuiz({int? courseId, int count = 20}) async {
     final response = await _dio.get<List<dynamic>>(
       '/games/random-quiz',
       queryParameters: {
