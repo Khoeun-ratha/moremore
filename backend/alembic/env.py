@@ -2,14 +2,12 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.core.config import settings  # noqa: E402
+from app.db.session import make_engine  # noqa: E402
 from app.models import Base  # noqa: E402
 
 # this is the Alembic Config object, which provides
@@ -62,11 +60,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = make_engine(settings.DATABASE_URL, settings.DATABASE_SSL_CA_PATH)
 
     with connectable.connect() as connection:
         context.configure(

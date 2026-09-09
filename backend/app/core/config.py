@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     TEST_DATABASE_URL: str = ""
 
+    # Path to a CA certificate file, for MySQL hosts that require verified TLS
+    # (e.g. Aiven). Leave blank for a local/unencrypted connection.
+    DATABASE_SSL_CA_PATH: str = ""
+
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 45
