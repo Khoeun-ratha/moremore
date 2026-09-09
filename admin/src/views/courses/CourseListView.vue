@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Delete, Edit, Plus, Search } from '@element-plus/icons-vue'
 import { createCourse, deleteCourse, listCourses, updateCourse, type CourseInput } from '../../api/courses'
 import type { Course } from '../../types/api'
 import FileUploader from '../../components/FileUploader.vue'
 import { mediaUrl } from '../../utils/media'
+import { extractErrorMessage } from '../../utils/errorMessage'
 
 const router = useRouter()
 
@@ -27,6 +28,11 @@ const form = reactive<CourseInput>({
   cover_image_url: null,
 })
 const saving = ref(false)
+const coverUploading = ref(false)
+const formRef = ref<FormInstance>()
+const formRules: FormRules<CourseInput> = {
+  title: [{ required: true, message: 'Title is required', trigger: 'blur' }],
+}
 
 const levelTagType: Record<string, 'success' | 'warning' | 'danger'> = {
   beginner: 'success',
@@ -50,6 +56,7 @@ onMounted(load)
 function openCreateDialog() {
   editingCourse.value = null
   Object.assign(form, { title: '', description: '', category: '', level: 'beginner', cover_image_url: null })
+  formRef.value?.clearValidate()
   dialogVisible.value = true
 }
 
@@ -62,10 +69,17 @@ function openEditDialog(course: Course) {
     level: course.level,
     cover_image_url: course.cover_image_url,
   })
+  formRef.value?.clearValidate()
   dialogVisible.value = true
 }
 
 async function handleSave() {
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
+  if (coverUploading.value) {
+    ElMessage.warning('Please wait for the cover image to finish uploading.')
+    return
+  }
   saving.value = true
   try {
     if (editingCourse.value) {
@@ -77,8 +91,8 @@ async function handleSave() {
     }
     dialogVisible.value = false
     await load()
-  } catch {
-    ElMessage.error('Could not save the course. Check the fields and try again.')
+  } catch (err) {
+    ElMessage.error(extractErrorMessage(err, 'Could not save the course. Check the fields and try again.'))
   } finally {
     saving.value = false
   }
@@ -160,8 +174,8 @@ function goToDetail(course: Course) {
   </div>
 
   <el-dialog v-model="dialogVisible" :title="editingCourse ? 'Edit course' : 'New course'" width="480px">
-    <el-form label-position="top">
-      <el-form-item label="Title">
+    <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
+      <el-form-item label="Title" prop="title">
         <el-input v-model="form.title" />
       </el-form-item>
       <el-form-item label="Description">
@@ -178,12 +192,12 @@ function goToDetail(course: Course) {
         </el-select>
       </el-form-item>
       <el-form-item label="Cover image">
-        <FileUploader kind="image" v-model="form.cover_image_url" />
+        <FileUploader kind="image" v-model="form.cover_image_url" v-model:uploading="coverUploading" />
       </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="dialogVisible = false">Cancel</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSave">Save</el-button>
+      <el-button type="primary" :loading="saving || coverUploading" @click="handleSave">Save</el-button>
     </template>
   </el-dialog>
 </template>

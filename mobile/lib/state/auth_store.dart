@@ -5,6 +5,13 @@ import '../config.dart';
 import '../models/user.dart';
 import 'token_storage.dart';
 
+/// Thrown by [AuthStore.register] when the account was created successfully
+/// but the automatic follow-up login failed — a distinct case from
+/// registration itself failing, since the account genuinely exists.
+class RegisteredButLoginFailedException implements Exception {
+  const RegisteredButLoginFailedException();
+}
+
 /// Holds the current session (tokens + profile) and drives auth calls.
 ///
 /// Deliberately uses its own bare [Dio] instance (no interceptors) for
@@ -65,7 +72,16 @@ class AuthStore extends ChangeNotifier {
         'full_name': fullName,
       },
     );
-    await login(email, password);
+    try {
+      await login(email, password);
+    } catch (e) {
+      // The account now genuinely exists server-side — a transient failure
+      // here (e.g. a dropped connection right after registering) must not
+      // be shown as "registration failed" or the user is stuck retrying
+      // into a 409 "already registered". Signal it distinctly so the UI
+      // can send them to log in instead.
+      throw const RegisteredButLoginFailedException();
+    }
   }
 
   Future<void> fetchCurrentUser() async {

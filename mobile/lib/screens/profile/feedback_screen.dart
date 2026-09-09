@@ -59,7 +59,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       _error = null;
     });
     try {
-      await context.read<ApiServices>().feedback.submit(
+      final created = await context.read<ApiServices>().feedback.submit(
         type: _type,
         subject: _subjectController.text.trim(),
         message: _messageController.text.trim(),
@@ -67,10 +67,16 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       if (mounted) {
         _subjectController.clear();
         _messageController.clear();
+        setState(() {
+          _type = FeedbackType.feedback;
+          // Prepend the item the server just returned instead of a full
+          // re-fetch — same data, no extra request, no visible gap before
+          // it shows up in "Your submissions".
+          _mine = [created, ...?_mine];
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.trRead('thanksSubmissionSent'))),
         );
-        _loadMine();
       }
     } catch (e) {
       if (mounted) setState(() => _error = extractErrorMessage(context, e));
@@ -178,6 +184,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             : tr('subjectLabel'),
                         icon: Icons.short_text,
                       ),
+                      maxLength: 120,
                       textInputAction: TextInputAction.next,
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? tr('fieldRequired')
@@ -193,6 +200,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         icon: Icons.notes_outlined,
                       ),
                       maxLines: 5,
+                      maxLength: 1000,
                       textInputAction: TextInputAction.newline,
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? tr('fieldRequired')

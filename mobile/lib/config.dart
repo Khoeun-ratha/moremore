@@ -16,4 +16,14 @@ class AppConfig {
     final uri = Uri.parse(apiBaseUrl);
     return '${uri.scheme}://${uri.authority}';
   }
+
+  /// Empty unless overridden via --dart-define=PRIVACY_POLICY_URL=...; when
+  /// unset, [privacyPolicyUrl] falls back to the backend's own static page.
+  static const _privacyPolicyUrlOverride = String.fromEnvironment(
+    'PRIVACY_POLICY_URL',
+  );
+
+  static String get privacyPolicyUrl => _privacyPolicyUrlOverride.isNotEmpty
+      ? _privacyPolicyUrlOverride
+      : '$apiOrigin/privacy-policy';
 }

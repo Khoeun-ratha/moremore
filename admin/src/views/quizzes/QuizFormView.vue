@@ -6,6 +6,7 @@ import { ArrowLeft, Delete, Plus } from '@element-plus/icons-vue'
 import { createLessonQuiz, getLessonQuiz, getQuizWithAnswers, updateQuiz } from '../../api/quizzes'
 import { getLesson } from '../../api/lessons'
 import { useQuizForm } from '../../composables/useQuizForm'
+import { extractErrorMessage } from '../../utils/errorMessage'
 
 const props = defineProps<{ lessonId: number }>()
 const router = useRouter()
@@ -41,7 +42,7 @@ function goBack() {
 async function handleSave() {
   const errors = validate()
   if (errors.length) {
-    ElMessage.error(errors[0])
+    ElMessage.error({ message: errors.join(' • '), duration: 6000, showClose: true })
     return
   }
 
@@ -56,8 +57,8 @@ async function handleSave() {
       ElMessage.success('Quiz created')
     }
     goBack()
-  } catch {
-    ElMessage.error('Could not save the quiz. Check that every question has exactly one correct choice.')
+  } catch (err) {
+    ElMessage.error(extractErrorMessage(err, 'Could not save the quiz.'))
   } finally {
     saving.value = false
   }

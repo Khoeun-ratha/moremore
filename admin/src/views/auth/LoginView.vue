@@ -70,6 +70,12 @@ async function handleSubmit() {
           Log in
         </el-button>
       </el-form>
+
+      <div class="login-card__legal-links">
+        <router-link :to="{ name: 'terms-of-service' }">Terms &amp; Conditions</router-link>
+        <span>·</span>
+        <router-link :to="{ name: 'privacy-policy' }">Privacy Policy</router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -127,5 +133,25 @@ async function handleSubmit() {
 .login-card__submit {
   width: 100%;
   margin-top: 4px;
+}
+
+.login-card__legal-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.login-card__legal-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.login-card__legal-links a:hover {
+  color: var(--brand-600);
+  text-decoration: underline;
 }
 </style>

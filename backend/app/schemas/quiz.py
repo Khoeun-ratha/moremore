@@ -28,6 +28,20 @@ class QuizCreate(BaseModel):
     passing_score: int = 70
     questions: list[QuestionCreate]
 
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Title is required")
+        return v.strip()
+
+    @field_validator("passing_score")
+    @classmethod
+    def passing_score_in_range(cls, v: int) -> int:
+        if not 0 <= v <= 100:
+            raise ValueError("Passing score must be between 0 and 100")
+        return v
+
     @field_validator("questions")
     @classmethod
     def must_have_questions(cls, questions: list[QuestionCreate]) -> list[QuestionCreate]:

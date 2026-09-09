@@ -1,11 +1,25 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_error.dart';
+import '../../config.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/shaking_error_banner.dart';
+
+/// Deliberately permissive — this only screens out obvious typos before a
+/// round trip to the server, which still validates for real via Pydantic's
+/// EmailStr. `.trim()`'d input is checked, not raw.
+final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+/// Accepts digits with optional leading +, spaces, dashes, or parens —
+/// intentionally loose since phone formats vary by country; this is a
+/// sanity check against obvious garbage, not a strict international format.
+final _phonePattern = RegExp(r'^\+?[\d\s\-()]{7,20}$');
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,9 +35,14 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _submitting = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _agreedToPrivacyPolicy = false;
   String? _error;
+  late final TapGestureRecognizer _privacyPolicyTapRecognizer =
+      TapGestureRecognizer()..onTap = _openPrivacyPolicy;
 
   late final AnimationController _animController;
   late final Animation<double> _fadeIn;
@@ -69,11 +88,32 @@ class _RegisterScreenState extends State<RegisterScreen>
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _privacyPolicyTapRecognizer.dispose();
     super.dispose();
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final uri = Uri.parse(AppConfig.privacyPolicyUrl);
+    var launched = false;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('couldNotOpenFile'))),
+      );
+    }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_agreedToPrivacyPolicy) {
+      setState(() => _error = context.trRead('mustAgreeToPrivacyPolicy'));
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -86,6 +126,16 @@ class _RegisterScreenState extends State<RegisterScreen>
         _nameController.text.trim(),
       );
       // Navigation happens via the router's redirect once AuthStore notifies.
+    } on RegisteredButLoginFailedException {
+      // The account was created; only the follow-up auto-login hiccuped.
+      // Retrying "Register" here would just hit a 409 "already registered"
+      // dead end, so send them to log in with their new credentials instead.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.trRead('accountCreatedPleaseLogIn'))),
+        );
+        context.go('/login');
+      }
     } catch (e) {
       if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {
@@ -234,9 +284,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.email],
-                              validator: (v) => (v == null || v.isEmpty)
-                                  ? tr('emailRequired')
-                                  : null,
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return tr('emailRequired');
+                                }
+                                if (!_emailPattern.hasMatch(v.trim())) {
+                                  return tr('emailInvalid');
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
@@ -250,9 +306,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                               autofillHints: const [
                                 AutofillHints.telephoneNumber,
                               ],
-                              validator: (v) => (v == null || v.isEmpty)
-                                  ? tr('phoneRequired')
-                                  : null,
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return tr('phoneRequired');
+                                }
+                                if (!_phonePattern.hasMatch(v.trim())) {
+                                  return tr('phoneInvalid');
+                                }
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
@@ -274,12 +336,92 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 ),
                               ),
                               obscureText: _obscurePassword,
-                              textInputAction: TextInputAction.done,
+                              textInputAction: TextInputAction.next,
                               autofillHints: const [AutofillHints.newPassword],
-                              onFieldSubmitted: (_) => _submit(),
                               validator: (v) => (v == null || v.length < 8)
                                   ? tr('passwordMinLength')
                                   : null,
+                            ),
+                            const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              decoration: _decoration(
+                                tr('confirmPasswordLabel'),
+                                icon: Icons.lock_outline,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    size: 20,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscureConfirmPassword =
+                                        !_obscureConfirmPassword,
+                                  ),
+                                ),
+                              ),
+                              obscureText: _obscureConfirmPassword,
+                              textInputAction: TextInputAction.done,
+                              autofillHints: const [AutofillHints.newPassword],
+                              onFieldSubmitted: (_) => _submit(),
+                              validator: (v) => (v != _passwordController.text)
+                                  ? tr('passwordsDoNotMatch')
+                                  : null,
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Checkbox(
+                                  value: _agreedToPrivacyPolicy,
+                                  onChanged: _submitting
+                                      ? null
+                                      : (v) => setState(
+                                          () => _agreedToPrivacyPolicy =
+                                              v ?? false,
+                                        ),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: GestureDetector(
+                                      onTap: _submitting
+                                          ? null
+                                          : () => setState(
+                                              () => _agreedToPrivacyPolicy =
+                                                  !_agreedToPrivacyPolicy,
+                                            ),
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: AppColors.textSecondary,
+                                            height: 1.4,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: '${tr('iAgreeToThe')} ',
+                                            ),
+                                            TextSpan(
+                                              text: tr('privacyPolicy'),
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.w600,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
+                                              recognizer:
+                                                  _privacyPolicyTapRecognizer,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             if (_error != null) ...[
                               const SizedBox(height: 12),
@@ -290,7 +432,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ],
                             const SizedBox(height: 20),
                             FilledButton(
-                              onPressed: _submitting ? null : _submit,
+                              onPressed:
+                                  (_submitting || !_agreedToPrivacyPolicy)
+                                  ? null
+                                  : _submit,
                               child: _submitting
                                   ? const SizedBox(
                                       height: 20,

@@ -11,6 +11,7 @@ import '../../models/course.dart';
 import '../../models/lesson.dart';
 import '../../models/progress.dart';
 import '../../models/review.dart';
+import '../../state/auth_store.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/game_entry_card.dart';
@@ -78,126 +79,197 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final tr = context.trRead;
     final ratingLabels = _ratingLabels(tr);
     final course = _course!;
-    var rating = 5;
-    final commentController = TextEditingController();
 
-    final submitted = await showDialog<bool>(
+    // Pre-fill from the current user's own existing review, if any — the
+    // submit endpoint is an upsert, so re-opening this dialog silently
+    // overwrote whatever was there before. Reuses data already loaded on
+    // this screen, no extra request needed.
+    final myUserId = context.read<AuthStore>().user?.id;
+    Review? existingReview;
+    if (myUserId != null) {
+      for (final r in _reviews ?? const <Review>[]) {
+        if (r.userId == myUserId) {
+          existingReview = r;
+          break;
+        }
+      }
+    }
+
+    int? rating = existingReview?.rating;
+    final commentController = TextEditingController(
+      text: existingReview?.comment ?? '',
+    );
+
+    final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
-          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-          title: Text(
-            tr('rateThisCourse'),
-            style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(5, (i) {
-                  final starValue = i + 1;
-                  return GestureDetector(
-                    onTap: () => setDialogState(() => rating = starValue),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: Icon(
-                        starValue <= rating ? Icons.star : Icons.star_border,
-                        size: 32,
-                        color: Colors.amber,
-                      ),
-                    ),
-                  );
-                }),
+        builder: (dialogContext, setDialogState) {
+          var submitting = false;
+          String? dialogError;
+
+          Future<void> handleSubmit() async {
+            if (rating == null || submitting) return;
+            setDialogState(() {
+              submitting = true;
+              dialogError = null;
+            });
+            try {
+              await context.read<ApiServices>().courses.submitReview(
+                course.id,
+                rating: rating!,
+                comment: commentController.text.trim(),
+              );
+              if (dialogContext.mounted) Navigator.of(dialogContext).pop(true);
+            } catch (e) {
+              if (!dialogContext.mounted) return;
+              setDialogState(() {
+                submitting = false;
+                dialogError = extractErrorMessage(dialogContext, e);
+              });
+            }
+          }
+
+          return PopScope(
+            canPop: !submitting,
+            child: AlertDialog(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
               ),
-              const SizedBox(height: 6),
-              Text(
-                ratingLabels[rating - 1],
-                textAlign: TextAlign.center,
+              titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
+              contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              title: Text(
+                existingReview != null
+                    ? tr('editYourReview')
+                    : tr('rateThisCourse'),
                 style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: commentController,
-                maxLines: 3,
-                style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
-                decoration: InputDecoration(
-                  hintText: tr('shareYourThoughts'),
-                  hintStyle: const TextStyle(color: AppColors.textMuted),
-                  filled: true,
-                  fillColor: AppColors.surfaceHigh,
-                  contentPadding: const EdgeInsets.all(14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(5, (i) {
+                      final starValue = i + 1;
+                      final filled = rating != null && starValue <= rating!;
+                      return GestureDetector(
+                        onTap: submitting
+                            ? null
+                            : () => setDialogState(() => rating = starValue),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: Icon(
+                            filled ? Icons.star : Icons.star_border,
+                            size: 32,
+                            color: Colors.amber,
+                          ),
+                        ),
+                      );
+                    }),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                      color: AppColors.primary,
-                      width: 1.5,
+                  const SizedBox(height: 6),
+                  Text(
+                    rating == null
+                        ? tr('tapAStarToRate')
+                        : ratingLabels[rating! - 1],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: commentController,
+                    enabled: !submitting,
+                    maxLines: 3,
+                    maxLength: 500,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: tr('shareYourThoughts'),
+                      hintStyle: const TextStyle(color: AppColors.textMuted),
+                      filled: true,
+                      fillColor: AppColors.surfaceHigh,
+                      contentPadding: const EdgeInsets.all(14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (dialogError != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      dialogError!,
+                      style: const TextStyle(
+                        color: AppColors.danger,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: Text(tr('cancel')),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(true),
-                    child: Text(tr('submit')),
-                  ),
+              actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: submitting
+                            ? null
+                            : () => Navigator.of(dialogContext).pop(false),
+                        child: Text(tr('cancel')),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: (rating == null || submitting)
+                            ? null
+                            : handleSubmit,
+                        child: submitting
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(tr('submit')),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
 
-    if (submitted != true || !mounted) return;
-    try {
-      await context.read<ApiServices>().courses.submitReview(
-        course.id,
-        rating: rating,
-        comment: commentController.text.trim(),
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('reviewSubmitted'))),
       );
-      if (mounted) _load();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(extractErrorMessage(context, e))),
-        );
-      }
+      _load();
     }
   }
 

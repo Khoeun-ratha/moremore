@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_services.dart';
+import '../../config.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../models/user.dart';
 import '../../state/auth_store.dart';
@@ -66,6 +68,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (confirmed == true) auth.logout();
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final uri = Uri.parse(AppConfig.privacyPolicyUrl);
+    var launched = false;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.trRead('couldNotOpenFile'))),
+      );
+    }
   }
 
   Future<void> _pickLanguage() async {
@@ -226,6 +243,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     iconColor: AppColors.success,
                     label: tr('feedbackSuggestionsMenu'),
                     onTap: () => context.push('/profile/feedback'),
+                  ),
+                  _MenuTile(
+                    icon: Icons.privacy_tip_outlined,
+                    iconColor: AppColors.textSecondary,
+                    label: tr('privacyPolicy'),
+                    onTap: _openPrivacyPolicy,
                     showDivider: false,
                   ),
                 ],

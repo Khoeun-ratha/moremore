@@ -8,7 +8,7 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../views/auth/LoginView.vue'),
-      meta: { public: true },
+      meta: { public: true, hideLayout: true },
     },
     {
       path: '/',
@@ -94,6 +94,18 @@ const router = createRouter({
       name: 'game-attempts',
       component: () => import('../views/games/GameAttemptsListView.vue'),
       meta: { title: 'Game Attempts' },
+    },
+    {
+      path: '/privacy-policy',
+      name: 'privacy-policy',
+      component: () => import('../views/legal/PrivacyPolicyView.vue'),
+      meta: { title: 'Privacy Policy', public: true },
+    },
+    {
+      path: '/terms-of-service',
+      name: 'terms-of-service',
+      component: () => import('../views/legal/TermsOfServiceView.vue'),
+      meta: { title: 'Terms & Conditions', public: true },
     },
   ],
 })

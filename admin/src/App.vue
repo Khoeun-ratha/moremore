@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import AppLayout from './components/AppLayout.vue'
 
 const route = useRoute()
-const isPublicPage = computed(() => !!route.meta.public)
+const isPublicPage = computed(() => !!route.meta.hideLayout)
 </script>
 
 <template>

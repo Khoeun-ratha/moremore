@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, Picture, UploadFilled, VideoCamera } from '@element-plus/icons-vue'
 import { uploadFile, type FileKind } from '../api/files'
 import { mediaUrl } from '../utils/media'
+import { extractErrorMessage } from '../utils/errorMessage'
 
 const props = defineProps<{
   kind: FileKind
@@ -12,9 +13,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
+  'update:uploading': [value: boolean]
 }>()
 
 const uploading = ref(false)
+
+watch(uploading, (value) => emit('update:uploading', value))
 
 const kindIcon = computed(() => ({ video: VideoCamera, pdf: Document, image: Picture }[props.kind]))
 const kindLabel = computed(() => ({ video: 'video', pdf: 'PDF', image: 'image' }[props.kind]))
@@ -32,7 +36,7 @@ async function handleChange(file: { raw?: File }) {
     emit('update:modelValue', result.url)
     ElMessage.success(`Uploaded ${result.filename}`)
   } catch (err) {
-    ElMessage.error('Upload failed. Check the file type and size and try again.')
+    ElMessage.error(extractErrorMessage(err, 'Upload failed. Check the file type and size and try again.'))
     throw err
   } finally {
     uploading.value = false

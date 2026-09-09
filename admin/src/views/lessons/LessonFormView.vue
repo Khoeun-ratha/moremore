@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, DocumentCopy, InfoFilled, VideoPlay } from '@element-plus/icons-vue'
 import { createLesson, getLesson, updateLesson, type LessonInput } from '../../api/lessons'
 import FileUploader from '../../components/FileUploader.vue'
+import { extractErrorMessage } from '../../utils/errorMessage'
 
 const props = defineProps<{ courseId?: number; lessonId?: number }>()
 const router = useRouter()
@@ -26,6 +27,12 @@ const form = reactive<LessonInput>({
 
 const videoSource = ref<'upload' | 'youtube'>('upload')
 
+// Kept separate per-mode so switching the radio toggle never discards a file
+// already uploaded or a URL already typed in the other mode — only the value
+// belonging to the currently active mode is sent on save.
+const uploadedVideoUrl = ref<string | null>(null)
+const youtubeUrl = ref<string | null>(null)
+
 onMounted(async () => {
   if (props.lessonId) {
     loading.value = true
@@ -39,40 +46,45 @@ onMounted(async () => {
         video_url: lesson.video_url,
         file_url: lesson.file_url,
       })
-      videoSource.value = form.video_url && YOUTUBE_URL_RE.test(form.video_url) ? 'youtube' : 'upload'
+      const isYoutube = !!lesson.video_url && YOUTUBE_URL_RE.test(lesson.video_url)
+      videoSource.value = isYoutube ? 'youtube' : 'upload'
+      if (isYoutube) {
+        youtubeUrl.value = lesson.video_url
+      } else {
+        uploadedVideoUrl.value = lesson.video_url
+      }
     } finally {
       loading.value = false
     }
   }
 })
 
-function handleVideoSourceChange(value: 'upload' | 'youtube') {
-  const isYoutube = !!form.video_url && YOUTUBE_URL_RE.test(form.video_url)
-  if (value === 'youtube' && !isYoutube) form.video_url = null
-  if (value === 'upload' && isYoutube) form.video_url = null
-}
-
 async function handleSave() {
   if (!form.title.trim()) {
     ElMessage.error('Title is required')
     return
   }
-  if (videoSource.value === 'youtube' && form.video_url && !YOUTUBE_URL_RE.test(form.video_url)) {
+  if (videoSource.value === 'youtube' && youtubeUrl.value && !YOUTUBE_URL_RE.test(youtubeUrl.value)) {
     ElMessage.error('Enter a valid YouTube URL (youtube.com or youtu.be)')
     return
   }
+  if (!isEditing && !courseId.value) {
+    ElMessage.error('Could not determine which course this lesson belongs to. Go back and try again.')
+    return
+  }
+  form.video_url = videoSource.value === 'youtube' ? youtubeUrl.value : uploadedVideoUrl.value
   saving.value = true
   try {
     if (isEditing && props.lessonId) {
       await updateLesson(props.lessonId, form)
       ElMessage.success('Lesson updated')
-    } else if (courseId.value) {
-      await createLesson(courseId.value, form)
+    } else {
+      await createLesson(courseId.value!, form)
       ElMessage.success('Lesson created')
     }
     router.push({ name: 'course-detail', params: { id: courseId.value } })
-  } catch {
-    ElMessage.error('Could not save the lesson.')
+  } catch (err) {
+    ElMessage.error(extractErrorMessage(err, 'Could not save the lesson.'))
   } finally {
     saving.value = false
   }
@@ -128,14 +140,14 @@ function goBack() {
       </header>
 
       <div class="form-section__body">
-        <el-radio-group v-model="videoSource" class="video-source-toggle" @change="handleVideoSourceChange">
+        <el-radio-group v-model="videoSource" class="video-source-toggle">
           <el-radio-button value="upload">Upload file</el-radio-button>
           <el-radio-button value="youtube">YouTube link</el-radio-button>
         </el-radio-group>
-        <FileUploader v-if="videoSource === 'upload'" kind="video" v-model="form.video_url" />
+        <FileUploader v-if="videoSource === 'upload'" kind="video" v-model="uploadedVideoUrl" />
         <el-input
           v-else
-          v-model="form.video_url"
+          v-model="youtubeUrl"
           placeholder="https://www.youtube.com/watch?v=..."
           clearable
         />

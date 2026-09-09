@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class LessonCreate(BaseModel):
@@ -9,6 +9,13 @@ class LessonCreate(BaseModel):
     content: str = ""
     video_url: str | None = None
     file_url: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Title is required")
+        return v.strip()
 
 
 class LessonUpdate(BaseModel):
