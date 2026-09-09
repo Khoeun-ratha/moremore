@@ -1,0 +1,44 @@
+Learning Platform - Technology Stack
+=====================================
+
+BACKEND (backend/) - Python, FastAPI
+-------------------------------------
+- Framework: FastAPI 0.115, served by Uvicorn (ASGI)
+- Database: MySQL 8.0, via SQLAlchemy 2.0 (ORM) + PyMySQL driver
+- Migrations: Alembic
+- Validation/schemas: Pydantic 2.10 + pydantic-settings
+- Auth: python-jose (JWT), passlib + bcrypt (password hashing)
+- File uploads: python-multipart
+- Rate limiting: SlowAPI
+- Email validation: email-validator
+- Testing: pytest + httpx (test client)
+- Containerization: Docker + docker-compose (MySQL, backend, Adminer for DB inspection)
+
+ADMIN PANEL (admin/) - Web, TypeScript/Vue
+-------------------------------------------
+- Framework: Vue 3.5 (Composition API, <script setup>)
+- UI library: Element Plus (+ @element-plus/icons-vue)
+- Routing: Vue Router 5 (client-side SPA routing)
+- State management: Pinia
+- HTTP client: Axios
+- Build tooling: Vite 8, vue-tsc for type-checking
+- Language: TypeScript
+
+MOBILE APP (mobile/) - Flutter/Dart
+-------------------------------------
+- Framework: Flutter (Dart SDK ^3.12)
+- State management: Provider
+- Routing: go_router
+- HTTP client: Dio
+- Secure storage: flutter_secure_storage (tokens)
+- Media: video_player, chewie, youtube_player_iframe, image_picker, gal
+- External links: url_launcher
+- i18n: custom (en/km JSON translation files) + intl
+- Testing/linting: flutter_test, flutter_lints
+
+CROSS-CUTTING
+-------------
+- Architecture: 3-tier - FastAPI REST API backend, Vue admin panel, Flutter mobile client,
+  all talking to the same /api/v1 backend
+- i18n: English + Khmer (km) across mobile
+- Auth model: JWT access/refresh tokens, role-based (user / admin / super_admin)
