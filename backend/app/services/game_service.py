@@ -3,11 +3,11 @@ import random
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import AppError
-from app.models.course import Lesson
+from app.models.course import Course, Lesson
 from app.models.game import GameAttempt
 from app.models.quiz import Question, Quiz
 from app.models.user import User
-from app.schemas.game import GameResult, GameSubmission, LeaderboardEntryOut
+from app.schemas.game import GameAttemptAdminOut, GameResult, GameSubmission, LeaderboardEntryOut
 from app.schemas.quiz import AnswerResult
 
 
@@ -80,17 +80,24 @@ def submit_game(db: Session, user_id: int, course_id: int | None, submission: Ga
     db.commit()
     db.refresh(attempt)
 
+    rank = None
+    for entry in _rank_all_players(db):
+        if entry.user_id == user_id:
+            rank = entry.rank
+            break
+
     return GameResult(
         score=score,
         total=total,
         percentage=percentage,
         submitted_at=attempt.submitted_at,
         answers=results,
+        rank=rank,
     )
 
 
-def get_leaderboard(db: Session, limit: int = 20) -> list[LeaderboardEntryOut]:
-    """Each player's single best Quick Challenge round, ranked by score
+def _rank_all_players(db: Session) -> list[LeaderboardEntryOut]:
+    """Every player's single best Quick Challenge round, ranked by score
     percentage — ties broken by the higher raw score, then whoever set it
     first. Computed in Python: attempt volume is small enough that a plain
     scan is simpler and clearer than a SQL ratio comparison."""
@@ -137,5 +144,58 @@ def get_leaderboard(db: Session, limit: int = 20) -> list[LeaderboardEntryOut]:
             percentage=round((attempt.score / attempt.total) * 100, 2),
             achieved_at=attempt.submitted_at,
         )
-        for i, (attempt, user) in enumerate(ranked[:limit])
+        for i, (attempt, user) in enumerate(ranked)
     ]
+
+
+def get_leaderboard(db: Session, limit: int = 20) -> list[LeaderboardEntryOut]:
+    return _rank_all_players(db)[:limit]
+
+
+def list_game_attempts_admin(
+    db: Session, page: int = 1, page_size: int = 20, q: str | None = None
+) -> tuple[list[GameAttemptAdminOut], int]:
+    """Every game attempt platform-wide, newest first — for admin
+    monitoring/moderation. Optional `q` filters by submitting user's name
+    or email."""
+    query = (
+        db.query(GameAttempt, User, Course)
+        .join(User, User.id == GameAttempt.user_id)
+        .outerjoin(Course, Course.id == GameAttempt.course_id)
+    )
+    if q:
+        like = f"%{q}%"
+        query = query.filter((User.full_name.ilike(like)) | (User.email.ilike(like)))
+
+    total = query.count()
+    rows = (
+        query.order_by(GameAttempt.submitted_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    items = [
+        GameAttemptAdminOut(
+            id=attempt.id,
+            user_id=user.id,
+            user_full_name=user.full_name,
+            user_email=user.email,
+            course_id=attempt.course_id,
+            course_title=course.title if course else None,
+            score=attempt.score,
+            total=attempt.total,
+            percentage=round((attempt.score / attempt.total) * 100, 2) if attempt.total else 0.0,
+            submitted_at=attempt.submitted_at,
+        )
+        for attempt, user, course in rows
+    ]
+    return items, total
+
+
+def delete_game_attempt_admin(db: Session, attempt_id: int) -> None:
+    attempt = db.get(GameAttempt, attempt_id)
+    if attempt is None:
+        raise AppError(404, "Game attempt not found")
+    db.delete(attempt)
+    db.commit()

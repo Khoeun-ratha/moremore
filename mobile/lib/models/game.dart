@@ -40,12 +40,18 @@ class GameResult {
   final DateTime submittedAt;
   final List<AnswerResult> answers;
 
+  /// This round's current leaderboard rank — 1 means it's now the
+  /// platform's best-ever round. Null only if ranking couldn't be
+  /// computed (not expected in practice).
+  final int? rank;
+
   GameResult({
     required this.score,
     required this.total,
     required this.percentage,
     required this.submittedAt,
     required this.answers,
+    required this.rank,
   });
 
   factory GameResult.fromJson(Map<String, dynamic> json) => GameResult(
@@ -56,6 +62,7 @@ class GameResult {
     answers: (json['answers'] as List)
         .map((e) => AnswerResult.fromJson(e as Map<String, dynamic>))
         .toList(),
+    rank: json['rank'] as int?,
   );
 }
 
@@ -81,6 +88,48 @@ class GameAttempt {
     total: json['total'] as int,
     submittedAt: DateTime.parse(json['submitted_at'] as String),
   );
+}
+
+/// A game attempt with the submitting user's identity attached — only
+/// ever returned from admin-only endpoints.
+class AdminGameAttempt {
+  final int id;
+  final int userId;
+  final String userFullName;
+  final String userEmail;
+  final int? courseId;
+  final String? courseTitle;
+  final int score;
+  final int total;
+  final double percentage;
+  final DateTime submittedAt;
+
+  AdminGameAttempt({
+    required this.id,
+    required this.userId,
+    required this.userFullName,
+    required this.userEmail,
+    required this.courseId,
+    required this.courseTitle,
+    required this.score,
+    required this.total,
+    required this.percentage,
+    required this.submittedAt,
+  });
+
+  factory AdminGameAttempt.fromJson(Map<String, dynamic> json) =>
+      AdminGameAttempt(
+        id: json['id'] as int,
+        userId: json['user_id'] as int,
+        userFullName: json['user_full_name'] as String,
+        userEmail: json['user_email'] as String,
+        courseId: json['course_id'] as int?,
+        courseTitle: json['course_title'] as String?,
+        score: json['score'] as int,
+        total: json['total'] as int,
+        percentage: (json['percentage'] as num).toDouble(),
+        submittedAt: DateTime.parse(json['submitted_at'] as String),
+      );
 }
 
 /// A player's single best Quick Challenge round, ranked by score

@@ -89,6 +89,12 @@ const router = createRouter({
       props: (route) => ({ feedbackId: Number(route.params.id) }),
       meta: { title: 'Feedback detail' },
     },
+    {
+      path: '/game-attempts',
+      name: 'game-attempts',
+      component: () => import('../views/games/GameAttemptsListView.vue'),
+      meta: { title: 'Game Attempts' },
+    },
   ],
 })
 

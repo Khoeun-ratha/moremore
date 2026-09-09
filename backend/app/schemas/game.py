@@ -26,6 +26,11 @@ class GameResult(BaseModel):
     percentage: float
     submitted_at: datetime
     answers: list[AnswerResult]
+    # This round's current leaderboard rank — 1 if it's now the player's
+    # (and the platform's) best-ever round. Null if leaderboard ranking
+    # couldn't be computed (never expected in practice, right after a
+    # successful submit).
+    rank: int | None = None
 
 
 class GameAttemptOut(BaseModel):
@@ -34,6 +39,22 @@ class GameAttemptOut(BaseModel):
     course_id: int | None
     score: int
     total: int
+    submitted_at: datetime
+
+
+class GameAttemptAdminOut(BaseModel):
+    """A game attempt with the submitting user's identity attached, for
+    admin moderation/monitoring — never exposed to non-admin endpoints."""
+
+    id: int
+    user_id: int
+    user_full_name: str
+    user_email: str
+    course_id: int | None
+    course_title: str | None
+    score: int
+    total: int
+    percentage: float
     submitted_at: datetime
 
 

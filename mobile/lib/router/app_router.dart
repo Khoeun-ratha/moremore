@@ -6,6 +6,7 @@ import '../screens/auth/register_screen.dart';
 import '../models/certificate.dart';
 import '../screens/courses/course_detail_screen.dart';
 import '../screens/courses/course_list_screen.dart';
+import '../screens/games/admin_game_attempts_screen.dart';
 import '../screens/games/game_home_screen.dart';
 import '../screens/games/game_result_screen.dart';
 import '../screens/games/game_screen.dart';
@@ -221,6 +222,13 @@ GoRouter buildAppRouter(AuthStore authStore) {
         pageBuilder: (context, state) => buildPageWithTransition(
           state: state,
           child: const LeaderboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/games',
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const AdminGameAttemptsScreen(),
         ),
       ),
       GoRoute(

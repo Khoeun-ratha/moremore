@@ -153,6 +153,29 @@ export interface Feedback {
   user_email: string
 }
 
+export interface GameAttemptAdmin {
+  id: number
+  user_id: number
+  user_full_name: string
+  user_email: string
+  course_id: number | null
+  course_title: string | null
+  score: number
+  total: number
+  percentage: number
+  submitted_at: string
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  user_id: number
+  full_name: string
+  score: number
+  total: number
+  percentage: number
+  achieved_at: string
+}
+
 export interface ApiErrorBody {
   error?: string
   detail?: unknown

@@ -102,6 +102,18 @@ def test_submit_random_quiz_scores_and_records_attempt(client, admin_headers, us
     assert history[0]["total"] == 2
 
 
+def test_submit_random_quiz_reports_rank(client, admin_headers, user_headers):
+    _course, lesson = _create_course_and_lesson(client, admin_headers)
+    _create_quiz(client, admin_headers, lesson["id"], n_questions=2)
+
+    questions = client.get("/api/v1/games/random-quiz", headers=user_headers).json()
+    answers = [{"question_id": q["id"], "choice_id": q["choices"][1]["id"]} for q in questions]
+
+    resp = client.post("/api/v1/games/random-quiz/submit", json={"answers": answers}, headers=user_headers)
+    result = resp.json()
+    assert result["rank"] == 1  # first and only player so far
+
+
 def test_submit_random_quiz_partial_score(client, admin_headers, user_headers):
     _course, lesson = _create_course_and_lesson(client, admin_headers)
     _create_quiz(client, admin_headers, lesson["id"], n_questions=2)
@@ -172,6 +184,110 @@ def test_leaderboard_ranks_by_best_percentage_per_user(client, admin_headers, us
     assert board[1]["percentage"] == low_score["percentage"]
     assert board[1]["rank"] == 2
     assert {entry["full_name"] for entry in board} == {"Test User"}  # conftest registers all as "Test User"
+
+
+def test_submit_random_quiz_rank_drops_after_being_overtaken(client, admin_headers, user_headers):
+    from tests.conftest import _register_and_login
+
+    _course, lesson = _create_course_and_lesson(client, admin_headers)
+    _create_quiz(client, admin_headers, lesson["id"], n_questions=4)
+
+    other_headers = _register_and_login(client, "other-player@example.com")
+
+    def play(headers, n_correct):
+        questions = client.get("/api/v1/games/random-quiz", headers=headers).json()
+        answers = []
+        for i, q in enumerate(questions):
+            correct_choice = next(c for c in q["choices"] if c["is_correct"])
+            wrong_choice = next(c for c in q["choices"] if not c["is_correct"])
+            choice = correct_choice if i < n_correct else wrong_choice
+            answers.append({"question_id": q["id"], "choice_id": choice["id"]})
+        return client.post("/api/v1/games/random-quiz/submit", json={"answers": answers}, headers=headers).json()
+
+    first = play(user_headers, n_correct=2)  # 50%
+    assert first["rank"] == 1
+
+    second = play(other_headers, n_correct=4)  # 100% — overtakes
+    assert second["rank"] == 1
+
+    # the first player's own rank has now dropped to 2nd
+    board = client.get("/api/v1/games/leaderboard", headers=user_headers).json()
+    assert board[0]["rank"] == 1 and board[0]["percentage"] == 100.0
+    assert board[1]["rank"] == 2 and board[1]["percentage"] == 50.0
+
+
+def test_admin_list_game_attempts_requires_admin(client, user_headers):
+    resp = client.get("/api/v1/games/admin/attempts", headers=user_headers)
+    assert resp.status_code == 403
+
+
+def test_admin_list_game_attempts_shows_every_user(client, admin_headers, user_headers):
+    from tests.conftest import _register_and_login
+
+    course, lesson = _create_course_and_lesson(client, admin_headers)
+    _create_quiz(client, admin_headers, lesson["id"], n_questions=2)
+
+    other_headers = _register_and_login(client, "other-player@example.com")
+
+    for headers in (user_headers, other_headers):
+        questions = client.get(f"/api/v1/games/random-quiz?course_id={course['id']}", headers=headers).json()
+        answers = [{"question_id": q["id"], "choice_id": q["choices"][1]["id"]} for q in questions]
+        client.post(
+            f"/api/v1/games/random-quiz/submit?course_id={course['id']}",
+            json={"answers": answers},
+            headers=headers,
+        )
+
+    resp = client.get("/api/v1/games/admin/attempts", headers=admin_headers)
+    assert resp.status_code == 200
+    page = resp.json()
+    assert page["total"] == 2
+    assert len(page["items"]) == 2
+    assert page["items"][0]["user_email"] in ("user@example.com", "other-player@example.com")
+    assert page["items"][0]["course_title"] == "Intro to Python"
+
+
+def test_admin_list_game_attempts_filters_by_search(client, admin_headers, user_headers):
+    _course, lesson = _create_course_and_lesson(client, admin_headers)
+    _create_quiz(client, admin_headers, lesson["id"], n_questions=1)
+
+    questions = client.get("/api/v1/games/random-quiz", headers=user_headers).json()
+    answers = [{"question_id": q["id"], "choice_id": q["choices"][0]["id"]} for q in questions]
+    client.post("/api/v1/games/random-quiz/submit", json={"answers": answers}, headers=user_headers)
+
+    resp = client.get("/api/v1/games/admin/attempts?q=nonexistent", headers=admin_headers)
+    assert resp.json()["total"] == 0
+
+    resp = client.get("/api/v1/games/admin/attempts?q=user@example.com", headers=admin_headers)
+    assert resp.json()["total"] == 1
+
+
+def test_admin_delete_game_attempt_requires_admin(client, user_headers):
+    resp = client.delete("/api/v1/games/admin/attempts/1", headers=user_headers)
+    assert resp.status_code == 403
+
+
+def test_admin_delete_game_attempt_404_when_missing(client, admin_headers):
+    resp = client.delete("/api/v1/games/admin/attempts/999", headers=admin_headers)
+    assert resp.status_code == 404
+
+
+def test_admin_delete_game_attempt_removes_it_from_leaderboard(client, admin_headers, user_headers):
+    _course, lesson = _create_course_and_lesson(client, admin_headers)
+    _create_quiz(client, admin_headers, lesson["id"], n_questions=1)
+
+    questions = client.get("/api/v1/games/random-quiz", headers=user_headers).json()
+    answers = [{"question_id": q["id"], "choice_id": q["choices"][0]["id"]} for q in questions]
+    client.post("/api/v1/games/random-quiz/submit", json={"answers": answers}, headers=user_headers)
+
+    attempts = client.get("/api/v1/games/admin/attempts", headers=admin_headers).json()["items"]
+    attempt_id = attempts[0]["id"]
+
+    resp = client.delete(f"/api/v1/games/admin/attempts/{attempt_id}", headers=admin_headers)
+    assert resp.status_code == 204
+
+    board = client.get("/api/v1/games/leaderboard", headers=admin_headers).json()
+    assert board == []
 
 
 def test_leaderboard_keeps_only_best_round_per_user(client, admin_headers, user_headers):

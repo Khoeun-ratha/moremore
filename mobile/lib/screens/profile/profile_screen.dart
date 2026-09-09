@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../api/api_services.dart';
 import '../../l10n/l10n_extension.dart';
+import '../../models/user.dart';
 import '../../state/auth_store.dart';
 import '../../state/locale_store.dart';
 import '../../theme/app_theme.dart';
@@ -229,6 +230,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
+              if (user != null && isAdminRole(user.role)) ...[
+                const SizedBox(height: 16),
+                _MenuGroup(
+                  children: [
+                    _MenuTile(
+                      icon: Icons.emoji_events_outlined,
+                      iconColor: AppColors.primaryHigh,
+                      label: tr('manageGamesMenu'),
+                      onTap: () => context.push('/admin/games'),
+                      showDivider: false,
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
               _MenuGroup(
                 children: [

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../models/game.dart';
+import '../models/page.dart';
 
 class GamesApi {
   GamesApi(this._dio);
@@ -47,5 +48,25 @@ class GamesApi {
     return response.data!
         .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<Page<AdminGameAttempt>> adminListAttempts({
+    String? q,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/games/admin/attempts',
+      queryParameters: {
+        if (q != null && q.isNotEmpty) 'q': q,
+        'page': page,
+        'page_size': pageSize,
+      },
+    );
+    return Page.fromJson(response.data!, AdminGameAttempt.fromJson);
+  }
+
+  Future<void> adminDeleteAttempt(int attemptId) async {
+    await _dio.delete<void>('/games/admin/attempts/$attemptId');
   }
 }

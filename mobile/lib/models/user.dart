@@ -1,9 +1,17 @@
 import '../l10n/translations.dart';
 
-enum UserRole { user, admin }
+enum UserRole { user, admin, superAdmin }
 
-UserRole userRoleFromJson(String value) =>
-    value == 'admin' ? UserRole.admin : UserRole.user;
+UserRole userRoleFromJson(String value) => switch (value) {
+  'admin' => UserRole.admin,
+  'super_admin' => UserRole.superAdmin,
+  _ => UserRole.user,
+};
+
+/// True for both `admin` and `super_admin` — mirrors the backend's
+/// `require_admin` dependency, which grants both roles admin access.
+bool isAdminRole(UserRole role) =>
+    role == UserRole.admin || role == UserRole.superAdmin;
 
 enum Gender { male, female, other, preferNotToSay }
 

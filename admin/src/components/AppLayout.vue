@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown, ChatDotRound, Collection, DataLine, Medal, SwitchButton, User as UserIcon } from '@element-plus/icons-vue'
+import { ArrowDown, ChatDotRound, Collection, DataLine, Medal, SwitchButton, Trophy, User as UserIcon } from '@element-plus/icons-vue'
 import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
@@ -14,6 +14,7 @@ const navItems = [
   { path: '/users', label: 'Users', icon: UserIcon },
   { path: '/certificates', label: 'Certificates', icon: Medal },
   { path: '/feedback', label: 'Feedback', icon: ChatDotRound },
+  { path: '/game-attempts', label: 'Game Attempts', icon: Trophy },
 ]
 
 const activeMenuPath = computed(() => {

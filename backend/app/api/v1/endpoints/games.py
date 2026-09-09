@@ -1,11 +1,25 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user, get_db
+from app.core.dependencies import get_current_user, get_db, require_admin
 from app.models.game import GameAttempt
 from app.models.user import User
-from app.schemas.game import GameAttemptOut, GameQuestionOut, GameResult, GameSubmission, LeaderboardEntryOut
-from app.services.game_service import get_leaderboard, get_random_questions, submit_game
+from app.schemas.common import Page
+from app.schemas.game import (
+    GameAttemptAdminOut,
+    GameAttemptOut,
+    GameQuestionOut,
+    GameResult,
+    GameSubmission,
+    LeaderboardEntryOut,
+)
+from app.services.game_service import (
+    delete_game_attempt_admin,
+    get_leaderboard,
+    get_random_questions,
+    list_game_attempts_admin,
+    submit_game,
+)
 
 router = APIRouter(prefix="/games", tags=["games"])
 
@@ -51,3 +65,24 @@ def quick_challenge_leaderboard(
 ):
     """Every player's single best Quick Challenge round, ranked by score."""
     return get_leaderboard(db, limit=limit)
+
+
+@router.get("/admin/attempts", response_model=Page)
+def list_all_game_attempts(
+    q: str | None = Query(None, description="Search by submitting user's name or email"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Every Quick Challenge attempt platform-wide, for admin monitoring
+    and moderation (e.g. removing a suspicious run from the leaderboard)."""
+    items, total = list_game_attempts_admin(db, page=page, page_size=page_size, q=q)
+    return Page(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.delete("/admin/attempts/{attempt_id}", status_code=204)
+def delete_game_attempt(
+    attempt_id: int, db: Session = Depends(get_db), _admin: User = Depends(require_admin)
+):
+    delete_game_attempt_admin(db, attempt_id)
