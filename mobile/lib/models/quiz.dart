@@ -1,11 +1,15 @@
 class Choice {
   final int id;
   final String text;
+  final bool isCorrect;
 
-  Choice({required this.id, required this.text});
+  Choice({required this.id, required this.text, required this.isCorrect});
 
-  factory Choice.fromJson(Map<String, dynamic> json) =>
-      Choice(id: json['id'] as int, text: json['text'] as String);
+  factory Choice.fromJson(Map<String, dynamic> json) => Choice(
+    id: json['id'] as int,
+    text: json['text'] as String,
+    isCorrect: json['is_correct'] as bool? ?? false,
+  );
 }
 
 class Question {

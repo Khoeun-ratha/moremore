@@ -138,7 +138,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final question = quiz.questions[_currentIndex];
     final total = quiz.questions.length;
-    final answered = _answers[question.id] != null;
+    final selectedChoiceId = _answers[question.id];
+    final answered = selectedChoiceId != null;
+    final answeredCorrectly =
+        answered &&
+        question.choices.any((c) => c.isCorrect && c.id == selectedChoiceId);
     final isLast = _currentIndex == total - 1;
 
     return SafeArea(
@@ -239,14 +243,55 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ...question.choices.map(
-                  (choice) => QuizChoiceTile(
+                ...question.choices.map((choice) {
+                  final feedback = !answered
+                      ? ChoiceFeedback.none
+                      : choice.isCorrect
+                      ? ChoiceFeedback.correct
+                      : (choice.id == selectedChoiceId
+                            ? ChoiceFeedback.incorrect
+                            : ChoiceFeedback.none);
+                  return QuizChoiceTile(
                     text: choice.text,
-                    selected: _answers[question.id] == choice.id,
-                    onTap: () =>
-                        setState(() => _answers[question.id] = choice.id),
+                    selected: selectedChoiceId == choice.id,
+                    feedback: feedback,
+                    onTap: answered
+                        ? () {}
+                        : () =>
+                              setState(() => _answers[question.id] = choice.id),
+                  );
+                }),
+                if (answered) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        answeredCorrectly
+                            ? Icons.check_circle
+                            : Icons.info_outline,
+                        size: 18,
+                        color: answeredCorrectly
+                            ? AppColors.success
+                            : AppColors.danger,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          answeredCorrectly
+                              ? tr('correctFeedback')
+                              : tr('incorrectFeedback'),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: answeredCorrectly
+                                ? AppColors.success
+                                : AppColors.danger,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                ],
               ],
             ),
           ),

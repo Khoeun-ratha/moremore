@@ -67,14 +67,17 @@ def test_quiz_requires_exactly_one_correct_choice(client, admin_headers):
     assert resp.status_code == 422
 
 
-def test_get_quiz_hides_correct_answer(client, admin_headers, user_headers):
+def test_get_quiz_includes_correct_answer(client, admin_headers, user_headers):
+    """Choices include is_correct so the app can show instant per-question
+    feedback, matching the Quick Challenge practice game."""
     _course, lesson = _create_course_and_lesson(client, admin_headers)
     _create_quiz(client, admin_headers, lesson["id"])
 
     resp = client.get(f"/api/v1/lessons/{lesson['id']}/quiz", headers=user_headers)
     assert resp.status_code == 200
     question = resp.json()["questions"][0]
-    assert "is_correct" not in question["choices"][0]
+    assert "is_correct" in question["choices"][0]
+    assert sum(1 for c in question["choices"] if c["is_correct"]) == 1
 
 
 def test_admin_full_quiz_view_exposes_answers(client, admin_headers, user_headers):

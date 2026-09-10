@@ -19,8 +19,10 @@ from app.services.quiz_service import get_attempt_detail, get_quiz_with_question
 router = APIRouter(tags=["quizzes"])
 
 
-@router.get("/lessons/{lesson_id}/quiz", response_model=QuizOut)
+@router.get("/lessons/{lesson_id}/quiz", response_model=QuizOutWithAnswers)
 def get_lesson_quiz(lesson_id: int, db: Session = Depends(get_db), _user: User = Depends(get_current_user)):
+    """Includes which choice is correct so the app can show instant
+    per-question feedback, matching the Quick Challenge practice game."""
     quiz = (
         db.query(Quiz)
         .options(selectinload(Quiz.questions).selectinload(Question.choices))
