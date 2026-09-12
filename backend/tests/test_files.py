@@ -35,7 +35,17 @@ def test_upload_rejects_oversized_file(client, admin_headers, monkeypatch):
     assert resp.status_code == 413
 
 
-def test_upload_image_succeeds_and_is_servable(client, admin_headers):
+def test_upload_image_succeeds(client, admin_headers, monkeypatch):
+    """Files are stored on Cloudinary (persistent, unlike Render's disk) —
+    the real network call is mocked so tests don't depend on live credentials."""
+    import app.services.file_service as file_service_module
+
+    monkeypatch.setattr(
+        file_service_module.cloudinary.uploader,
+        "upload_large",
+        lambda buffer, **kwargs: {"secure_url": "https://res.cloudinary.com/demo/image/upload/fake.png"},
+    )
+
     resp = client.post(
         "/api/v1/files/upload",
         params={"kind": "image"},
@@ -46,13 +56,20 @@ def test_upload_image_succeeds_and_is_servable(client, admin_headers):
     body = resp.json()
     assert body["kind"] == "image"
     assert body["size_bytes"] == len(b"fake-image-bytes")
-
-    served = client.get(body["url"])
-    assert served.status_code == 200
-    assert served.content == b"fake-image-bytes"
+    assert body["url"] == "https://res.cloudinary.com/demo/image/upload/fake.png"
 
 
-def test_upload_supports_range_requests_for_video(client, admin_headers):
+def test_upload_video_uses_video_resource_type(client, admin_headers, monkeypatch):
+    import app.services.file_service as file_service_module
+
+    captured_kwargs = {}
+
+    def fake_upload_large(buffer, **kwargs):
+        captured_kwargs.update(kwargs)
+        return {"secure_url": "https://res.cloudinary.com/demo/video/upload/fake.mp4"}
+
+    monkeypatch.setattr(file_service_module.cloudinary.uploader, "upload_large", fake_upload_large)
+
     video_bytes = b"0123456789" * 100
     resp = client.post(
         "/api/v1/files/upload",
@@ -61,8 +78,28 @@ def test_upload_supports_range_requests_for_video(client, admin_headers):
         headers=admin_headers,
     )
     assert resp.status_code == 200
-    url = resp.json()["url"]
+    body = resp.json()
+    assert body["url"] == "https://res.cloudinary.com/demo/video/upload/fake.mp4"
+    assert body["size_bytes"] == len(video_bytes)
+    assert captured_kwargs["resource_type"] == "video"
 
-    ranged = client.get(url, headers={"Range": "bytes=0-9"})
-    assert ranged.status_code == 206
-    assert ranged.content == b"0123456789"
+
+def test_upload_pdf_uses_raw_resource_type(client, admin_headers, monkeypatch):
+    import app.services.file_service as file_service_module
+
+    captured_kwargs = {}
+
+    def fake_upload_large(buffer, **kwargs):
+        captured_kwargs.update(kwargs)
+        return {"secure_url": "https://res.cloudinary.com/demo/raw/upload/fake.pdf"}
+
+    monkeypatch.setattr(file_service_module.cloudinary.uploader, "upload_large", fake_upload_large)
+
+    resp = client.post(
+        "/api/v1/files/upload",
+        params={"kind": "pdf"},
+        files={"file": ("notes.pdf", io.BytesIO(b"%PDF-1.4 fake"), "application/pdf")},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200
+    assert captured_kwargs["resource_type"] == "raw"

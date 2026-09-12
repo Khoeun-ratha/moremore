@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     MEDIA_ROOT: str = "media"
     MAX_UPLOAD_SIZE_MB: int = 500
 
+    # Uploaded files (avatars, course covers, lesson videos/PDFs) are stored
+    # on Cloudinary's free tier — Render's free web service has no persistent
+    # disk, so anything written locally is wiped on every deploy.
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+
     FIRST_ADMIN_EMAIL: str = ""
     FIRST_ADMIN_PASSWORD: str = ""
 

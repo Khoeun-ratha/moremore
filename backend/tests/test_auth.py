@@ -180,7 +180,17 @@ def test_update_profile_rejects_duplicate_phone(client, user_headers):
     assert resp.status_code == 409
 
 
-def test_upload_avatar(client, user_headers):
+def test_upload_avatar(client, user_headers, monkeypatch):
+    # Files are stored on Cloudinary (persistent, unlike Render's disk) — the
+    # real network call is mocked so tests don't depend on live credentials.
+    import app.services.file_service as file_service_module
+
+    monkeypatch.setattr(
+        file_service_module.cloudinary.uploader,
+        "upload_large",
+        lambda buffer, **kwargs: {"secure_url": "https://res.cloudinary.com/demo/image/upload/avatar.png"},
+    )
+
     # save_upload only checks extension + non-empty size, so real image bytes aren't required.
     fake_png_bytes = b"not-a-real-png-but-non-empty"
     resp = client.post(
@@ -190,8 +200,7 @@ def test_upload_avatar(client, user_headers):
     )
     assert resp.status_code == 200
     avatar_url = resp.json()["avatar_url"]
-    assert avatar_url is not None
-    assert avatar_url.startswith("/media/images/")
+    assert avatar_url == "https://res.cloudinary.com/demo/image/upload/avatar.png"
 
     # persisted — GET /me reflects it
     me = client.get("/api/v1/auth/me", headers=user_headers)

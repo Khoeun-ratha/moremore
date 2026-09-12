@@ -23,6 +23,12 @@ services:
         value: media
       - key: MAX_UPLOAD_SIZE_MB
         value: "500"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
         value: "10"
       - key: SMS_WEBHOOK_URL

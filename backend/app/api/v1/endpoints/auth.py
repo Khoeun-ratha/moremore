@@ -72,7 +72,7 @@ def update_me(data: MeUpdate, db: Session = Depends(get_db), current_user: User 
 def update_my_avatar(
     file: UploadFile, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    _path, url, _size = save_upload("image", file)
+    url, _size = save_upload("image", file)
     return update_avatar(db, current_user, url)
 
 

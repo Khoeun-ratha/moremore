@@ -1,6 +1,9 @@
 import uuid
+from io import BytesIO
 from pathlib import Path
 
+import cloudinary
+import cloudinary.uploader
 from fastapi import UploadFile
 
 from app.core.config import settings
@@ -18,12 +21,33 @@ SUBDIR_BY_KIND: dict[str, str] = {
     "image": "images",
 }
 
+# Cloudinary calls anything that isn't image/video a "raw" resource.
+RESOURCE_TYPE_BY_KIND: dict[str, str] = {
+    "video": "video",
+    "pdf": "raw",
+    "image": "image",
+}
 
-def _media_root() -> Path:
-    return Path(settings.MEDIA_ROOT)
+_configured = False
 
 
-def save_upload(kind: str, upload_file: UploadFile) -> tuple[Path, str, int]:
+def _ensure_configured() -> None:
+    global _configured
+    if _configured:
+        return
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True,
+    )
+    _configured = True
+
+
+def save_upload(kind: str, upload_file: UploadFile) -> tuple[str, int]:
+    """Uploads to Cloudinary (free persistent storage) instead of local disk —
+    Render's free web service has no persistent disk, so anything written
+    locally is wiped on the next deploy."""
     if kind not in ALLOWED_EXTENSIONS:
         raise AppError(400, f"Unsupported kind '{kind}'. Must be one of {list(ALLOWED_EXTENSIONS)}")
 
@@ -33,26 +57,24 @@ def save_upload(kind: str, upload_file: UploadFile) -> tuple[Path, str, int]:
         raise AppError(400, f"File extension '{extension}' not allowed for kind '{kind}'")
 
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    subdir = _media_root() / SUBDIR_BY_KIND[kind]
-    subdir.mkdir(parents=True, exist_ok=True)
-
-    stored_name = f"{uuid.uuid4().hex}{extension}"
-    destination = subdir / stored_name
-
+    buffer = BytesIO()
     size = 0
     chunk_size = 1024 * 1024
-    with destination.open("wb") as out_file:
-        while chunk := upload_file.file.read(chunk_size):
-            size += len(chunk)
-            if size > max_bytes:
-                out_file.close()
-                destination.unlink(missing_ok=True)
-                raise AppError(413, f"File exceeds max upload size of {settings.MAX_UPLOAD_SIZE_MB}MB")
-            out_file.write(chunk)
+    while chunk := upload_file.file.read(chunk_size):
+        size += len(chunk)
+        if size > max_bytes:
+            raise AppError(413, f"File exceeds max upload size of {settings.MAX_UPLOAD_SIZE_MB}MB")
+        buffer.write(chunk)
 
     if size == 0:
-        destination.unlink(missing_ok=True)
         raise AppError(400, "Uploaded file is empty")
 
-    url = f"/media/{SUBDIR_BY_KIND[kind]}/{stored_name}"
-    return destination, url, size
+    buffer.seek(0)
+    _ensure_configured()
+    result = cloudinary.uploader.upload_large(
+        buffer,
+        resource_type=RESOURCE_TYPE_BY_KIND[kind],
+        folder=f"moremore/{SUBDIR_BY_KIND[kind]}",
+        public_id=uuid.uuid4().hex,
+    )
+    return result["secure_url"], size

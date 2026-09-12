@@ -42,12 +42,20 @@ encryption for Postgres.
 - Fixed two migrations that only worked on MySQL's enum handling and would have silently broken
   on Postgres (`gender` column, `super_admin` role addition) — caught by actually running the
   full migration chain against your live database before telling you to deploy
+- File uploads (avatars, course covers, lesson videos/PDFs) go to Cloudinary instead of local
+  disk, so they survive redeploys — see "File uploads" below for the one-time setup
 
-## Known limitation (free tier)
+## File uploads (Cloudinary)
 
-Render's free web service has no persistent disk — any avatar/video/PDF uploaded through the app
-gets wiped on every redeploy. Fine to launch with; ask me to wire up free object storage
-(Cloudinary) later if this becomes a real problem.
+Render's free web service has no persistent disk, so uploads can't live there — they're stored on
+Cloudinary's free tier (25GB, no credit card) instead, which survives every redeploy.
+
+1. Go to https://cloudinary.com → **Sign up** → continue with Google or GitHub
+2. Your dashboard's home page shows three values under "API Environment variable" /
+   "Product Environment credentials": **Cloud name**, **API Key**, **API Secret**
+3. In Render, open **moremore-backend** → **Environment** tab, and add all three as environment
+   variables: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+4. Save — Render redeploys automatically
 
 ## Mobile app
 

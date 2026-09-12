@@ -10,5 +10,5 @@ router = APIRouter(prefix="/files", tags=["files"])
 
 @router.post("/upload", response_model=FileUploadOut)
 def upload_file(kind: str, file: UploadFile, _admin: User = Depends(require_admin)):
-    _path, url, size = save_upload(kind, file)
+    url, size = save_upload(kind, file)
     return FileUploadOut(url=url, filename=file.filename or "", kind=kind, size_bytes=size)
