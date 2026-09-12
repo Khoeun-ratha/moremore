@@ -93,14 +93,6 @@ GoRouter buildAppRouter(AuthStore authStore) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/games',
-                builder: (context, state) => const GameHomeScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
                 path: '/progress',
                 builder: (context, state) => const ProgressScreen(),
               ),
@@ -196,6 +188,13 @@ GoRouter buildAppRouter(AuthStore authStore) {
           child: QuizAttemptScreen(
             attemptId: int.parse(state.pathParameters['id']!),
           ),
+        ),
+      ),
+      GoRoute(
+        path: '/games',
+        pageBuilder: (context, state) => buildPageWithTransition(
+          state: state,
+          child: const GameHomeScreen(),
         ),
       ),
       GoRoute(
