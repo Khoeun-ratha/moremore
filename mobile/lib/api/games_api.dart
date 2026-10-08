@@ -10,10 +10,7 @@ class GamesApi {
   Future<List<GameQuestion>> randomQuiz({int? courseId, int count = 20}) async {
     final response = await _dio.get<List<dynamic>>(
       '/games/random-quiz',
-      queryParameters: {
-        if (courseId != null) 'course_id': courseId,
-        'count': count,
-      },
+      queryParameters: {'course_id': ?courseId, 'count': count},
     );
     return response.data!
         .map((e) => GameQuestion.fromJson(e as Map<String, dynamic>))
@@ -23,7 +20,7 @@ class GamesApi {
   Future<GameResult> submit(Map<int, int> answers, {int? courseId}) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/games/random-quiz/submit',
-      queryParameters: {if (courseId != null) 'course_id': courseId},
+      queryParameters: {'course_id': ?courseId},
       data: {
         'answers': answers.entries
             .map((e) => {'question_id': e.key, 'choice_id': e.value})

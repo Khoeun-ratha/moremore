@@ -3,7 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, DocumentCopy, InfoFilled, VideoPlay } from '@element-plus/icons-vue'
-import { createLesson, getLesson, updateLesson, type LessonInput } from '../../api/lessons'
+import { createLesson, getLesson, listLessons, updateLesson, type LessonInput } from '../../api/lessons'
 import FileUploader from '../../components/FileUploader.vue'
 import { extractErrorMessage } from '../../utils/errorMessage'
 
@@ -14,6 +14,8 @@ const isEditing = !!props.lessonId
 const courseId = ref<number | null>(props.courseId ?? null)
 const loading = ref(false)
 const saving = ref(false)
+// Set when the lesson being edited couldn't be loaded; saving the blank form would overwrite it.
+const loadError = ref<string | null>(null)
 
 const YOUTUBE_URL_RE = /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i
 
@@ -53,13 +55,25 @@ onMounted(async () => {
       } else {
         uploadedVideoUrl.value = lesson.video_url
       }
+    } catch (err) {
+      loadError.value = extractErrorMessage(err, 'Could not load this lesson.')
     } finally {
       loading.value = false
+    }
+  } else if (courseId.value) {
+    // New lessons go to the end of the course by default. Leaving every one at 0 made their
+    // order (and so which lesson unlocks next for learners) arbitrary.
+    try {
+      const existing = await listLessons(courseId.value)
+      form.order_index = existing.length ? Math.max(...existing.map((l) => l.order_index)) + 1 : 0
+    } catch {
+      // Best-effort: the admin can still set the order by hand.
     }
   }
 })
 
 async function handleSave() {
+  if (loadError.value) return
   if (!form.title.trim()) {
     ElMessage.error('Title is required')
     return
@@ -105,6 +119,16 @@ function goBack() {
     </div>
   </div>
 
+  <el-alert
+    v-if="loadError"
+    type="error"
+    :title="loadError"
+    description="Reload the page to try again. Saving is disabled so the existing lesson isn't overwritten."
+    show-icon
+    :closable="false"
+    class="lesson-form"
+    style="margin-bottom: 16px"
+  />
   <el-form label-position="top" v-loading="loading" class="lesson-form">
     <section class="form-section">
       <header class="form-section__header">
@@ -170,7 +194,9 @@ function goBack() {
 
     <div class="form-actions">
       <el-button @click="goBack">Cancel</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSave">Save lesson</el-button>
+      <el-button type="primary" :loading="saving" :disabled="loading || !!loadError" @click="handleSave">
+        Save lesson
+      </el-button>
     </div>
   </el-form>
 </template>

@@ -111,9 +111,11 @@ export function useQuizForm() {
     return {
       title: form.title,
       passing_score: form.passing_score,
+      // Position in the form is the order: stored order_index values go stale (gaps and
+      // duplicates) as soon as a question is removed and another added.
       questions: form.questions.map((q, i) => ({
         text: q.text,
-        order_index: q.order_index ?? i + 1,
+        order_index: i + 1,
         choices: q.choices.map((c) => ({ text: c.text, is_correct: c._key === q.correctKey })),
       })),
     }

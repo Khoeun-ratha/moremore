@@ -8,6 +8,7 @@ import 'l10n/translations.dart';
 import 'router/app_router.dart';
 import 'screens/splash/splash_screen.dart';
 import 'state/auth_store.dart';
+import 'state/learning_events.dart';
 import 'state/locale_store.dart';
 import 'theme/app_theme.dart';
 
@@ -25,6 +26,7 @@ class LearningPlatformApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthStore()..restoreSession()),
         ChangeNotifierProvider(create: (_) => LocaleStore()),
         ChangeNotifierProvider(create: (_) => Translations()),
+        ChangeNotifierProvider(create: (_) => LearningEvents()),
       ],
       child: Builder(
         builder: (context) {

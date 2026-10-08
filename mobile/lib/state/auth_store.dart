@@ -18,7 +18,19 @@ class RegisteredButLoginFailedException implements Exception {
 /// login/register/refresh/logout so those calls can never recurse into the
 /// main API client's 401-refresh interceptor. Mirrors admin/src/stores/auth.ts.
 class AuthStore extends ChangeNotifier {
-  AuthStore() : _bare = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl));
+  /// [bareClient] is for tests only; the app always uses the default.
+  AuthStore({@visibleForTesting Dio? bareClient})
+    : _bare =
+          bareClient ??
+          Dio(
+            BaseOptions(
+              baseUrl: AppConfig.apiBaseUrl,
+              // Generous enough for a free-tier host waking from sleep, but never
+              // leaves the user staring at a spinner forever on a dead network.
+              connectTimeout: AppConfig.connectTimeout,
+              receiveTimeout: AppConfig.receiveTimeout,
+            ),
+          );
 
   final Dio _bare;
   final _tokenStorage = TokenStorage();
@@ -84,10 +96,31 @@ class AuthStore extends ChangeNotifier {
     }
   }
 
+  /// Runs an authenticated call on the bare client. These calls bypass the
+  /// main API client's interceptor, so they do their own one-shot refresh:
+  /// on a 401 the (45-minute) access token is renewed with the refresh token
+  /// and the call is retried once, instead of failing a profile edit just
+  /// because the app sat open for a while.
+  Future<Response<T>> _authed<T>(
+    Future<Response<T>> Function(Options options) call,
+  ) async {
+    try {
+      return await call(_bearer());
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 401 || refreshToken == null) rethrow;
+      refreshInFlight ??= refresh().whenComplete(() => refreshInFlight = null);
+      await refreshInFlight;
+      return call(_bearer());
+    }
+  }
+
+  Options _bearer() =>
+      Options(headers: {'Authorization': 'Bearer $accessToken'});
+
   Future<void> fetchCurrentUser() async {
-    final response = await _bare.get<Map<String, dynamic>>(
-      '/auth/me',
-      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+    final response = await _authed(
+      (options) =>
+          _bare.get<Map<String, dynamic>>('/auth/me', options: options),
     );
     user = AppUser.fromJson(response.data!);
     notifyListeners();
@@ -99,31 +132,36 @@ class AuthStore extends ChangeNotifier {
     String? phone,
     Gender? gender,
   }) async {
-    final response = await _bare.patch<Map<String, dynamic>>(
-      '/auth/me',
-      data: {
-        'full_name': fullName,
-        'email': email,
-        'phone': (phone == null || phone.isEmpty) ? null : phone,
-        'gender': gender == null ? null : genderToJson(gender),
-      },
-      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+    final response = await _authed(
+      (options) => _bare.patch<Map<String, dynamic>>(
+        '/auth/me',
+        data: {
+          'full_name': fullName,
+          'email': email,
+          'phone': (phone == null || phone.isEmpty) ? null : phone,
+          'gender': gender == null ? null : genderToJson(gender),
+        },
+        options: options,
+      ),
     );
     user = AppUser.fromJson(response.data!);
     notifyListeners();
   }
 
   Future<void> updateAvatar(String filePath) async {
-    final formData = FormData.fromMap({
+    // A FormData body can only be sent once, so it is rebuilt for a retry.
+    Future<FormData> buildForm() async => FormData.fromMap({
       'file': await MultipartFile.fromFile(
         filePath,
         filename: filePath.split(RegExp(r'[\\/]')).last,
       ),
     });
-    final response = await _bare.post<Map<String, dynamic>>(
-      '/auth/me/avatar',
-      data: formData,
-      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+    final response = await _authed(
+      (options) async => _bare.post<Map<String, dynamic>>(
+        '/auth/me/avatar',
+        data: await buildForm(),
+        options: options,
+      ),
     );
     user = AppUser.fromJson(response.data!);
     notifyListeners();
@@ -133,10 +171,15 @@ class AuthStore extends ChangeNotifier {
     String currentPassword,
     String newPassword,
   ) async {
-    await _bare.post<void>(
-      '/auth/change-password',
-      data: {'current_password': currentPassword, 'new_password': newPassword},
-      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+    await _authed(
+      (options) => _bare.post<void>(
+        '/auth/change-password',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        },
+        options: options,
+      ),
     );
   }
 
@@ -206,7 +249,21 @@ class AuthStore extends ChangeNotifier {
       accessToken = stored.$1;
       refreshToken = stored.$2;
       try {
+        // Refreshes transparently if the stored access token has expired,
+        // so reopening the app after 45+ minutes keeps the user signed in.
         await fetchCurrentUser();
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        if (status == 401 || status == 403) {
+          // The session is genuinely over (refresh token expired/revoked,
+          // or the account was disabled).
+          await logout();
+        } else {
+          // Offline or server unreachable: show the login screen for now but
+          // keep the stored tokens, so the next launch can still restore.
+          accessToken = null;
+          refreshToken = null;
+        }
       } catch (_) {
         await logout();
       }

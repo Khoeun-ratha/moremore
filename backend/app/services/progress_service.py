@@ -2,10 +2,30 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import AppError
 from app.models.certificate import Certificate, generate_certificate_number
 from app.models.course import Course, Lesson
 from app.models.progress import LessonProgress
 from app.schemas.progress import CourseProgressOut, OverallProgressOut
+
+
+def ensure_lesson_unlocked(db: Session, user_id: int, lesson: Lesson) -> None:
+    """Lessons unlock in order: a lesson can be completed (or its quiz taken) only once every
+    lesson before it in the course is complete. Re-doing an already-completed lesson is always
+    allowed. Mirrors the lock icons in the mobile app, which alone could be bypassed via the API."""
+    completed_ids = {
+        lp.lesson_id
+        for lp in db.query(LessonProgress).filter(
+            LessonProgress.user_id == user_id, LessonProgress.completed.is_(True)
+        )
+    }
+    if lesson.id in completed_ids:
+        return
+    for earlier in lesson.course.lessons:
+        if earlier.id == lesson.id:
+            return
+        if earlier.id not in completed_ids:
+            raise AppError(409, "Complete the previous lessons first")
 
 
 def mark_lesson_complete(db: Session, user_id: int, lesson_id: int) -> None:
@@ -18,8 +38,10 @@ def mark_lesson_complete(db: Session, user_id: int, lesson_id: int) -> None:
         progress = LessonProgress(user_id=user_id, lesson_id=lesson_id)
         db.add(progress)
 
-    progress.completed = True
-    progress.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    if not progress.completed:
+        # Keep the first completion date; retaking a passed quiz shouldn't move it.
+        progress.completed = True
+        progress.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
     db.commit()
 
     lesson = db.get(Lesson, lesson_id)
@@ -104,8 +126,6 @@ def get_overall_progress(db: Session, user_id: int) -> OverallProgressOut:
 def get_course_progress(db: Session, user_id: int, course_id: int) -> CourseProgressOut:
     course = db.get(Course, course_id)
     if course is None:
-        from app.core.exceptions import AppError
-
         raise AppError(404, "Course not found")
 
     lesson_ids = [lesson.id for lesson in course.lessons]

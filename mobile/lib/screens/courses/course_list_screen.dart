@@ -24,6 +24,8 @@ class _CourseListScreenState extends State<CourseListScreen> {
   bool _hasMore = false;
   bool _loading = true;
   bool _loadingMore = false;
+  bool _loadMoreFailed = false;
+  int _requestId = 0;
   String? _error;
 
   @override
@@ -39,7 +41,11 @@ class _CourseListScreenState extends State<CourseListScreen> {
   }
 
   Future<void> _load({bool reset = true}) async {
+    // Only the newest request may write results: a slow earlier search
+    // finishing last must not replace the results of the latest one.
+    final requestId = ++_requestId;
     setState(() {
+      _loadMoreFailed = false;
       if (reset) {
         _loading = true;
         _page = 1;
@@ -54,6 +60,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
         q: _searchController.text.trim(),
         page: _page,
       );
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         if (reset) {
           _courses
@@ -65,9 +72,17 @@ class _CourseListScreenState extends State<CourseListScreen> {
         _hasMore = result.hasMore;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = extractErrorMessage(context, e));
+      if (!mounted || requestId != _requestId) return;
+      if (reset) {
+        setState(() => _error = extractErrorMessage(context, e));
+      } else {
+        // Keep what's already listed; offer a retry row instead of
+        // replacing the whole list with an error page.
+        _page -= 1;
+        setState(() => _loadMoreFailed = true);
+      }
     } finally {
-      if (mounted) {
+      if (mounted && requestId == _requestId) {
         setState(() {
           _loading = false;
           _loadingMore = false;
@@ -77,6 +92,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
   }
 
   Future<void> _loadMore() async {
+    if (_loadingMore) return;
     _page += 1;
     await _load(reset: false);
   }
@@ -132,6 +148,13 @@ class _CourseListScreenState extends State<CourseListScreen> {
         separatorBuilder: (context, index) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           if (index >= _courses.length) {
+            if (_loadMoreFailed) {
+              return TextButton.icon(
+                onPressed: _loadMore,
+                icon: const Icon(Icons.refresh),
+                label: Text(context.tr('couldNotLoadMore')),
+              );
+            }
             if (!_loadingMore) {
               WidgetsBinding.instance.addPostFrameCallback((_) => _loadMore());
             }

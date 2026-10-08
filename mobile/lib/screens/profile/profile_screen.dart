@@ -8,6 +8,7 @@ import '../../config.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../models/user.dart';
 import '../../state/auth_store.dart';
+import '../../state/learning_events.dart';
 import '../../state/locale_store.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/media.dart';
@@ -24,17 +25,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int? _enrolledCourseCount;
   int? _certificateCount;
 
+  late final LearningEvents _events;
+
   @override
   void initState() {
     super.initState();
+    // Finishing a course elsewhere changes the enrolled/certificate counts.
+    _events = context.read<LearningEvents>()..addListener(_loadStats);
     _loadStats();
+  }
+
+  @override
+  void dispose() {
+    _events.removeListener(_loadStats);
+    super.dispose();
   }
 
   Future<void> _loadStats() async {
     try {
       final api = context.read<ApiServices>();
-      final progress = await api.progress.me();
-      final certificates = await api.certificates.me();
+      final (progress, certificates) = await (
+        api.progress.me(),
+        api.certificates.me(),
+      ).wait;
       if (!mounted) return;
       setState(() {
         _enrolledCourseCount = progress.courses
@@ -94,17 +107,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (dialogContext) => SimpleDialog(
         title: Text(tr('language')),
         children: [
-          RadioListTile<String>(
-            value: 'en',
+          RadioGroup<String>(
             groupValue: current,
-            title: Text(tr('languageEnglish')),
             onChanged: (v) => Navigator.pop(dialogContext, v),
-          ),
-          RadioListTile<String>(
-            value: 'km',
-            groupValue: current,
-            title: Text(tr('languageKhmer')),
-            onChanged: (v) => Navigator.pop(dialogContext, v),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  value: 'en',
+                  title: Text(tr('languageEnglish')),
+                ),
+                RadioListTile<String>(
+                  value: 'km',
+                  title: Text(tr('languageKhmer')),
+                ),
+              ],
+            ),
           ),
         ],
       ),

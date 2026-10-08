@@ -7,6 +7,7 @@ import '../../api/api_services.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../models/game.dart';
 import '../../state/auth_store.dart';
+import '../../state/learning_events.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/game_entry_card.dart';
@@ -28,28 +29,47 @@ class _GameHomeScreenState extends State<GameHomeScreen> {
   bool _loading = true;
   String? _error;
 
+  late final LearningEvents _events;
+
   @override
   void initState() {
     super.initState();
+    _events = context.read<LearningEvents>()..addListener(_reloadQuietly);
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _events.removeListener(_reloadQuietly);
+    super.dispose();
+  }
+
+  void _reloadQuietly() => _load(silent: true);
+
+  /// [silent] refreshes in place (pull-to-refresh, or progress changing on
+  /// another screen) instead of swapping the page for a full-screen spinner.
+  Future<void> _load({bool silent = false}) async {
+    if (!silent || _attempts == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final api = context.read<ApiServices>().games;
       final results = await Future.wait([api.myAttempts(), api.leaderboard()]);
       if (mounted) {
         setState(() {
+          _error = null;
           _attempts = results[0] as List<GameAttempt>;
           _leaderboard = results[1] as List<LeaderboardEntry>;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _error = extractErrorMessage(context, e));
+      // A failed background refresh keeps showing what is already loaded.
+      if (mounted && !(silent && _attempts != null)) {
+        setState(() => _error = extractErrorMessage(context, e));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -88,7 +108,7 @@ class _GameHomeScreenState extends State<GameHomeScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(silent: true),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [

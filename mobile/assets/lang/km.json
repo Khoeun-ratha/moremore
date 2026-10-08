@@ -268,5 +268,14 @@
   "feedbackTypeLessonSuggestion": "ស្នើមេរៀន",
   "feedbackStatusSubmitted": "បានដាក់ស្នើ",
   "feedbackStatusReviewed": "បានពិនិត្យ",
-  "feedbackStatusDismissed": "បានច្រានចោល"
+  "feedbackStatusDismissed": "បានច្រានចោល",
+
+  "reviewSaved": "សូមអរគុណ! ការវាយតម្លៃរបស់អ្នកត្រូវបានរក្សាទុក។",
+  "backToLesson": "ត្រឡប់ទៅមេរៀន",
+  "leaveQuizTitle": "ចាកចេញពីកម្រងសំណួរ?",
+  "leaveGameTitle": "ចាកចេញពីជុំនេះ?",
+  "leaveQuizMessage": "ចម្លើយដែលអ្នកបានឆ្លើយរួច នឹងត្រូវបាត់បង់។",
+  "stay": "នៅបន្ត",
+  "leave": "ចាកចេញ",
+  "couldNotLoadMore": "មិនអាចផ្ទុកបន្ថែមបានទេ។ ចុចដើម្បីព្យាយាមម្ដងទៀត។"
 }

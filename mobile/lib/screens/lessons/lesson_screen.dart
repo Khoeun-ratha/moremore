@@ -10,12 +10,14 @@ import '../../l10n/l10n_extension.dart';
 import '../../models/lesson.dart';
 import '../../models/progress.dart';
 import '../../models/quiz.dart';
+import '../../state/learning_events.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/media.dart';
 import '../../utils/youtube.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/lesson_video_player.dart';
 import '../../widgets/youtube_lesson_player.dart';
+import '../quizzes/quiz_result_screen.dart';
 
 class LessonScreen extends StatefulWidget {
   const LessonScreen({super.key, required this.lessonId});
@@ -32,19 +34,35 @@ class _LessonScreenState extends State<LessonScreen> {
   CourseProgress? _courseProgress;
   bool _loading = true;
   bool _completing = false;
+  bool _advancing = false;
   String? _error;
+
+  late final LearningEvents _events;
 
   @override
   void initState() {
     super.initState();
+    // Passing this lesson's quiz happens on screens pushed above this one;
+    // reload so the bottom bar and "Your attempts" reflect it on return.
+    _events = context.read<LearningEvents>()..addListener(_reloadQuietly);
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _events.removeListener(_reloadQuietly);
+    super.dispose();
+  }
+
+  void _reloadQuietly() => _load(silent: true);
+
+  Future<void> _load({bool silent = false}) async {
+    if (!silent || _lesson == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final api = context.read<ApiServices>();
       final lesson = await api.lessons.get(widget.lessonId);
@@ -64,13 +82,18 @@ class _LessonScreenState extends State<LessonScreen> {
       } catch (_) {
         // Best-effort: only used for the "x/y lessons" progress pill.
       }
+      if (!mounted) return;
       setState(() {
         _lesson = lesson;
         _attempts = attempts;
         _courseProgress = courseProgress;
+        _error = null;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = extractErrorMessage(context, e));
+      // A failed background refresh keeps showing the lesson already loaded.
+      if (mounted && !(silent && _lesson != null)) {
+        setState(() => _error = extractErrorMessage(context, e));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -82,7 +105,10 @@ class _LessonScreenState extends State<LessonScreen> {
       final updated = await context.read<ApiServices>().lessons.markComplete(
         widget.lessonId,
       );
-      if (mounted) setState(() => _lesson = updated);
+      if (!mounted) return;
+      setState(() => _lesson = updated);
+      // Unlocks the next lesson on the course page and updates Home/Progress.
+      context.read<LearningEvents>().progressChanged();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -335,13 +361,123 @@ class _LessonScreenState extends State<LessonScreen> {
     );
   }
 
+  Future<void> _openQuiz(Lesson lesson) async {
+    final outcome = await context.push<QuizOutcome>(
+      '/lessons/${lesson.id}/quiz',
+    );
+    if (outcome == QuizOutcome.continueToNext && mounted) {
+      await _continueToNext();
+    }
+  }
+
+  /// Once this lesson is done: open the course's next unfinished lesson in
+  /// place of this one (so Back still returns to wherever the learner came
+  /// from), or — when nothing is left — show the course certificate.
+  Future<void> _continueToNext() async {
+    final lesson = _lesson!;
+    setState(() => _advancing = true);
+    try {
+      final api = context.read<ApiServices>();
+      final lessons = await api.lessons.listForCourse(lesson.courseId);
+      final next = lessons
+          .where((l) => !l.completed && l.id != lesson.id)
+          .firstOrNull;
+      if (!mounted) return;
+      if (next != null) {
+        context.pushReplacement('/lessons/${next.id}');
+        return;
+      }
+
+      // Course finished: `mark_lesson_complete` auto-issues the certificate.
+      final certificate = (await api.certificates.me())
+          .where((c) => c.courseId == lesson.courseId)
+          .firstOrNull;
+      if (!mounted) return;
+      if (certificate != null) {
+        context.pushReplacement('/certificate-celebration', extra: certificate);
+      } else if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/courses/${lesson.courseId}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _advancing = false);
+    }
+  }
+
+  Widget _continueButton() {
+    return FilledButton.icon(
+      style: FilledButton.styleFrom(minimumSize: const Size(0, 52)),
+      onPressed: _advancing ? null : _continueToNext,
+      icon: _advancing
+          ? const SizedBox(
+              height: 18,
+              width: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.arrow_forward, size: 18),
+      label: Text(context.tr('continueButton')),
+    );
+  }
+
+  Widget _completedHeader(String label) {
+    return Row(
+      children: [
+        const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.success,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget? _buildBottomBar() {
     final tr = context.tr;
     final lesson = _lesson;
     if (lesson == null) return null;
 
     late final Widget content;
-    if (lesson.hasQuiz) {
+    if (lesson.hasQuiz && lesson.completed) {
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _completedHeader(tr('quizPassed')),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 52),
+                  ),
+                  onPressed: _advancing ? null : () => _openQuiz(lesson),
+                  icon: const Icon(Icons.replay, size: 18),
+                  label: Text(tr('retake')),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(flex: 2, child: _continueButton()),
+            ],
+          ),
+        ],
+      );
+    } else if (lesson.hasQuiz) {
       content = Row(
         children: [
           Expanded(
@@ -350,9 +486,7 @@ class _LessonScreenState extends State<LessonScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  lesson.completed
-                      ? tr('quizPassed')
-                      : tr('thisLessonIncludesQuiz'),
+                  tr('thisLessonIncludesQuiz'),
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -361,9 +495,7 @@ class _LessonScreenState extends State<LessonScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  lesson.completed
-                      ? tr('retakeAnytimeHint')
-                      : tr('passWithRequiredScore'),
+                  tr('passWithRequiredScore'),
                   style: const TextStyle(
                     fontSize: 11.5,
                     color: AppColors.textMuted,
@@ -375,28 +507,20 @@ class _LessonScreenState extends State<LessonScreen> {
           const SizedBox(width: 14),
           FilledButton.icon(
             style: FilledButton.styleFrom(minimumSize: const Size(0, 52)),
-            onPressed: () => context.push('/lessons/${lesson.id}/quiz'),
-            icon: Icon(
-              lesson.completed ? Icons.replay : Icons.quiz_outlined,
-              size: 18,
-            ),
-            label: Text(lesson.completed ? tr('retake') : tr('takeTheQuiz')),
+            onPressed: () => _openQuiz(lesson),
+            icon: const Icon(Icons.quiz_outlined, size: 18),
+            label: Text(tr('takeTheQuiz')),
           ),
         ],
       );
     } else if (lesson.completed) {
-      content = Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.check_circle, color: AppColors.success, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            tr('lessonCompleted'),
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: AppColors.success,
-            ),
-          ),
+          _completedHeader(tr('lessonCompleted')),
+          const SizedBox(height: 12),
+          _continueButton(),
         ],
       );
     } else {

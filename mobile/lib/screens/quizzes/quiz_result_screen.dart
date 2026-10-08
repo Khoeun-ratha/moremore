@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-import '../../api/api_error.dart';
-import '../../api/api_services.dart';
 import '../../l10n/l10n_extension.dart';
-import '../../models/certificate.dart';
 import '../../models/quiz.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/score_gauge.dart';
@@ -22,7 +18,15 @@ class QuizResultArgs {
   final int courseId;
 }
 
-class QuizResultScreen extends StatefulWidget {
+/// What the learner chose on the result screen, handed back down the stack
+/// (result → quiz → lesson) with `pop` so each screen can react without
+/// anything wiping the navigation history:
+/// - [continueToNext]: the lesson screen opens the next lesson/certificate.
+/// - [close]: back to the lesson screen.
+/// Popping with no value means "Retake": the quiz screen resets itself.
+enum QuizOutcome { continueToNext, close }
+
+class QuizResultScreen extends StatelessWidget {
   const QuizResultScreen({
     super.key,
     required this.result,
@@ -42,77 +46,22 @@ class QuizResultScreen extends StatefulWidget {
   final bool isHistorical;
 
   @override
-  State<QuizResultScreen> createState() => _QuizResultScreenState();
-}
-
-class _QuizResultScreenState extends State<QuizResultScreen> {
-  bool _continuing = false;
-
-  Future<void> _continue() async {
-    final courseId = widget.courseId;
-    if (courseId == null) {
-      context.go('/courses');
-      return;
-    }
-    setState(() => _continuing = true);
-    try {
-      final api = context.read<ApiServices>();
-      final lessons = await api.lessons.listForCourse(courseId);
-      final remaining = lessons.where((l) => !l.completed).toList();
-      if (!mounted) return;
-
-      if (remaining.isNotEmpty) {
-        context.go('/lessons/${remaining.first.id}');
-        return;
-      }
-
-      // No lessons left incomplete: the course is finished, so look up the
-      // certificate that `mark_lesson_complete` auto-issues and celebrate it.
-      final certificates = await api.certificates.me();
-      Certificate? certificate;
-      for (final c in certificates) {
-        if (c.courseId == courseId) {
-          certificate = c;
-          break;
-        }
-      }
-      if (!mounted) return;
-      if (certificate != null) {
-        context.go('/certificate-celebration', extra: certificate);
-      } else {
-        context.go('/courses/$courseId');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(extractErrorMessage(context, e))),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _continuing = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    final result = widget.result;
     final passed = result.passed;
-    final canContinue = !widget.isHistorical && widget.courseId != null;
+    final canContinue = !isHistorical && courseId != null;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.isHistorical
-              ? tr('attemptDetailsTitle')
-              : tr('quizResultsTitle'),
+          isHistorical ? tr('attemptDetailsTitle') : tr('quizResultsTitle'),
         ),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
             onPressed: () =>
-                widget.isHistorical ? context.pop() : context.go('/courses'),
+                isHistorical ? context.pop() : context.pop(QuizOutcome.close),
           ),
         ],
       ),
@@ -321,7 +270,7 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-              if (widget.isHistorical)
+              if (isHistorical)
                 OutlinedButton(
                   onPressed: () => context.pop(),
                   child: Text(tr('close')),
@@ -329,21 +278,16 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
               else ...[
                 if (passed)
                   FilledButton.icon(
-                    onPressed: _continuing ? null : _continue,
-                    icon: _continuing
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.arrow_forward, size: 18),
+                    onPressed: () => context.pop(
+                      canContinue
+                          ? QuizOutcome.continueToNext
+                          : QuizOutcome.close,
+                    ),
+                    icon: const Icon(Icons.arrow_forward, size: 18),
                     label: Text(
                       canContinue
                           ? tr('continueToNextLesson')
-                          : tr('backToCourses'),
+                          : tr('backToLesson'),
                     ),
                   )
                 else
@@ -351,13 +295,11 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                     onPressed: () => context.pop(),
                     child: Text(tr('retakeQuiz')),
                   ),
-                if (!passed || canContinue) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: () => context.go('/courses'),
-                    child: Text(tr('backToCourses')),
-                  ),
-                ],
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () => context.pop(QuizOutcome.close),
+                  child: Text(tr('backToLesson')),
+                ),
               ],
             ],
           ),

@@ -17,4 +17,4 @@ class LessonProgress(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="lesson_progress")
-    lesson: Mapped["Lesson"] = relationship()
+    lesson: Mapped["Lesson"] = relationship(back_populates="progress_entries")

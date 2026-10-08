@@ -41,7 +41,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       final result = await context.read<ApiServices>().quizzes.getAttemptDetail(
         widget.attemptId,
       );
-      setState(() => _result = result);
+      if (mounted) setState(() => _result = result);
     } catch (e) {
       if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {

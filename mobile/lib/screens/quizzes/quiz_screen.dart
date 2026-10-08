@@ -7,6 +7,7 @@ import '../../api/api_services.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../models/lesson.dart';
 import '../../models/quiz.dart';
+import '../../state/learning_events.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/quiz_choice_tile.dart';
@@ -47,6 +48,7 @@ class _QuizScreenState extends State<QuizScreen> {
         api.lessons.getQuiz(widget.lessonId),
         api.lessons.get(widget.lessonId),
       ]);
+      if (!mounted) return;
       setState(() {
         _quiz = results[0] as Quiz;
         _lesson = results[1] as Lesson;
@@ -67,20 +69,26 @@ class _QuizScreenState extends State<QuizScreen> {
         quiz.id,
         _answers,
       );
-      if (mounted) {
-        // Await the push so that whenever the result screen is popped (e.g. via
-        // "Retake Quiz"), this screen resets rather than showing stale answers.
-        await context.push(
-          '/quiz-result',
-          extra: QuizResultArgs(result: result, courseId: _lesson!.courseId),
-        );
-        if (mounted) {
-          setState(() {
-            _answers.clear();
-            _currentIndex = 0;
-          });
-        }
+      if (!mounted) return;
+      // Progress may have changed (a pass completes the lesson); let the
+      // lesson/course/home screens underneath refresh themselves.
+      context.read<LearningEvents>().progressChanged();
+      final outcome = await context.push<QuizOutcome>(
+        '/quiz-result',
+        extra: QuizResultArgs(result: result, courseId: _lesson!.courseId),
+      );
+      if (!mounted) return;
+      if (outcome != null) {
+        // Continue / close: hand the choice down to the lesson screen.
+        context.pop(outcome);
+        return;
       }
+      // Popped without a choice ("Retake Quiz", or system back): start over
+      // rather than showing the stale answers.
+      setState(() {
+        _answers.clear();
+        _currentIndex = 0;
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -107,21 +115,56 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
+  /// Leaving mid-quiz throws away the answers given so far, so ask first.
+  Future<void> _confirmLeave() async {
+    // Mid-submit, leaving would drop the result the learner is waiting for.
+    if (_submitting) return;
+    if (_answers.isEmpty) {
+      context.pop();
+      return;
+    }
+    final tr = context.trRead;
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(tr('leaveQuizTitle')),
+        content: Text(tr('leaveQuizMessage')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(tr('stay')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(tr('leave')),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_quiz?.title ?? ''),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
+    return PopScope(
+      canPop: _answers.isEmpty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_quiz?.title ?? ''),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: _confirmLeave,
+          ),
         ),
-      ),
-      body: AnimatedSwitcher(
-        duration: AppMotion.fast,
-        switchInCurve: AppMotion.curve,
-        switchOutCurve: AppMotion.curve,
-        child: _buildBody(),
+        body: AnimatedSwitcher(
+          duration: AppMotion.fast,
+          switchInCurve: AppMotion.curve,
+          switchOutCurve: AppMotion.curve,
+          child: _buildBody(),
+        ),
       ),
     );
   }

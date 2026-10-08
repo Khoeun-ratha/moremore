@@ -7,7 +7,7 @@ from app.models.course import Course, Lesson
 from app.models.progress import LessonProgress
 from app.models.user import User
 from app.schemas.lesson import LessonCreate, LessonOut, LessonUpdate
-from app.services.progress_service import mark_lesson_complete
+from app.services.progress_service import ensure_lesson_unlocked, mark_lesson_complete
 
 router = APIRouter(tags=["lessons"])
 
@@ -83,6 +83,7 @@ def complete_lesson(lesson_id: int, db: Session = Depends(get_db), user: User = 
         raise AppError(404, "Lesson not found")
     if lesson.quiz is not None:
         raise AppError(409, "This lesson has a quiz — pass it to mark the lesson complete")
+    ensure_lesson_unlocked(db, user_id=user.id, lesson=lesson)
 
     mark_lesson_complete(db, user_id=user.id, lesson_id=lesson_id)
     return _to_lesson_out(lesson, completed=True)

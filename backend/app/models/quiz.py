@@ -31,6 +31,11 @@ class Question(Base):
 
     quiz: Mapped["Quiz"] = relationship(back_populates="questions")
     choices: Mapped[list["Choice"]] = relationship(back_populates="question", cascade="all, delete-orphan")
+    # Editing a quiz replaces its questions wholesale; learners' per-question answers to the
+    # old questions go with them (the attempt itself, and its score, are kept).
+    attempt_answers: Mapped[list["QuizAttemptAnswer"]] = relationship(
+        foreign_keys="QuizAttemptAnswer.question_id", cascade="all, delete-orphan"
+    )
 
 
 class Choice(Base):
@@ -42,6 +47,9 @@ class Choice(Base):
     is_correct: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     question: Mapped["Question"] = relationship(back_populates="choices")
+    attempt_answers: Mapped[list["QuizAttemptAnswer"]] = relationship(
+        foreign_keys="QuizAttemptAnswer.selected_choice_id", cascade="all, delete-orphan"
+    )
 
 
 class QuizAttempt(Base):

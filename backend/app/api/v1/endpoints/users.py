@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, require_admin
 from app.core.exceptions import AppError
+from app.models.course import Course
 from app.models.user import User, UserRole
 from app.schemas.progress import OverallProgressOut
 from app.schemas.user import UserOut, UserPasswordReset, UserUpdate
@@ -81,6 +82,11 @@ def delete_user(user_id: int, db: Session = Depends(get_db), admin: User = Depen
     if user is None:
         raise AppError(404, "User not found")
     _require_super_admin_for_admin_target(admin, user)
+    if user.id == admin.id:
+        raise AppError(400, "You can't delete your own account")
+    # Courses outlive the admin who authored them: hand them to the admin doing the delete
+    # instead of failing on the courses.created_by foreign key.
+    db.query(Course).filter(Course.created_by == user.id).update({Course.created_by: admin.id})
     db.delete(user)
     db.commit()
 

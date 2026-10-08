@@ -29,6 +29,8 @@ Open app
                                    ▼
                               View lesson list — sequential unlock
                                    │  lesson N+1 is locked (🔒, tap blocked) until lesson N is completed
+                                   │  (also enforced server-side: completing / submitting the quiz of a
+                                   │   locked lesson returns 409 — order is order_index, then id)
                                    ▼
                               Open a lesson
                                    │  GET /api/v1/lessons/{id}

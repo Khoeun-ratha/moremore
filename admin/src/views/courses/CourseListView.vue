@@ -99,11 +99,22 @@ async function handleSave() {
 }
 
 async function handleDelete(course: Course) {
-  await ElMessageBox.confirm(`Delete "${course.title}"? This also deletes its lessons and quizzes.`, 'Confirm', {
-    type: 'warning',
-  })
-  await deleteCourse(course.id)
-  ElMessage.success('Course deleted')
+  try {
+    await ElMessageBox.confirm(
+      `Delete "${course.title}"? This also deletes its lessons, quizzes, and every learner's progress, ` +
+        'reviews and certificates for it.',
+      'Confirm',
+      { type: 'warning', confirmButtonText: 'Delete', confirmButtonClass: 'el-button--danger' },
+    )
+  } catch {
+    return // cancelled
+  }
+  try {
+    await deleteCourse(course.id)
+    ElMessage.success('Course deleted')
+  } catch (err) {
+    ElMessage.error(extractErrorMessage(err, 'Could not delete the course.'))
+  }
   await load()
 }
 

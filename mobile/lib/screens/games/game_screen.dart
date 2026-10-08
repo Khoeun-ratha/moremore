@@ -6,6 +6,7 @@ import '../../api/api_error.dart';
 import '../../api/api_services.dart';
 import '../../l10n/l10n_extension.dart';
 import '../../models/game.dart';
+import '../../state/learning_events.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/quiz_choice_tile.dart';
@@ -64,6 +65,8 @@ class _GameScreenState extends State<GameScreen> {
         courseId: widget.courseId,
       );
       if (mounted) {
+        // Refreshes Game home's history/leaderboard underneath.
+        context.read<LearningEvents>().progressChanged();
         context.pushReplacement(
           '/game-result',
           extra: GameResultArgs(result: result, courseId: widget.courseId),
@@ -94,22 +97,57 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  /// Leaving mid-round throws away the answers given so far, so ask first.
+  Future<void> _confirmLeave() async {
+    // Mid-submit, leaving would drop the result the learner is waiting for.
+    if (_submitting) return;
+    if (_answers.isEmpty) {
+      context.pop();
+      return;
+    }
+    final tr = context.trRead;
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(tr('leaveGameTitle')),
+        content: Text(tr('leaveQuizMessage')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(tr('stay')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(tr('leave')),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('gameTitle')),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
+    return PopScope(
+      canPop: _answers.isEmpty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(tr('gameTitle')),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: _confirmLeave,
+          ),
         ),
-      ),
-      body: AnimatedSwitcher(
-        duration: AppMotion.fast,
-        switchInCurve: AppMotion.curve,
-        switchOutCurve: AppMotion.curve,
-        child: _buildBody(),
+        body: AnimatedSwitcher(
+          duration: AppMotion.fast,
+          switchInCurve: AppMotion.curve,
+          switchOutCurve: AppMotion.curve,
+          child: _buildBody(),
+        ),
       ),
     );
   }

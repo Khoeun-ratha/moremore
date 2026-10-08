@@ -18,6 +18,9 @@ const courseId = ref<number | null>(null)
 const quizId = ref<number | null>(null)
 const loading = ref(true)
 const saving = ref(false)
+// Set when the existing quiz couldn't be loaded: saving the empty form would then create a
+// duplicate (409) or wipe the real quiz, so saving stays blocked until a reload succeeds.
+const loadError = ref<string | null>(null)
 
 onMounted(async () => {
   try {
@@ -30,6 +33,8 @@ onMounted(async () => {
       const withAnswers = await getQuizWithAnswers(quiz.id)
       loadFromApi(withAnswers)
     }
+  } catch (err) {
+    loadError.value = extractErrorMessage(err, 'Could not load this quiz.')
   } finally {
     loading.value = false
   }
@@ -40,6 +45,7 @@ function goBack() {
 }
 
 async function handleSave() {
+  if (loadError.value) return
   const errors = validate()
   if (errors.length) {
     ElMessage.error({ message: errors.join(' • '), duration: 6000, showClose: true })
@@ -75,6 +81,15 @@ async function handleSave() {
     </div>
   </div>
 
+  <el-alert
+    v-if="loadError"
+    type="error"
+    :title="loadError"
+    description="Reload the page to try again. Saving is disabled so the existing quiz isn't overwritten."
+    show-icon
+    :closable="false"
+    style="max-width: 720px; margin-bottom: 16px"
+  />
   <div v-loading="loading" style="max-width: 720px">
     <div class="surface-card" style="margin-bottom: 16px">
       <el-form label-position="top">
@@ -127,7 +142,9 @@ async function handleSave() {
     <el-button :icon="Plus" @click="addQuestion">Add question</el-button>
 
     <div style="margin-top: 24px">
-      <el-button type="primary" :loading="saving" @click="handleSave">Save quiz</el-button>
+      <el-button type="primary" :loading="saving" :disabled="loading || !!loadError" @click="handleSave">
+        Save quiz
+      </el-button>
     </div>
   </div>
 </template>

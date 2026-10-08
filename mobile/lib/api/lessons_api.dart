@@ -14,7 +14,11 @@ class LessonsApi {
     return response.data!
         .map((e) => Lesson.fromJson(e as Map<String, dynamic>))
         .toList()
-      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+      // Same order as the backend's unlock rule: order_index, then id.
+      ..sort((a, b) {
+        final byOrder = a.orderIndex.compareTo(b.orderIndex);
+        return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
+      });
   }
 
   Future<Lesson> get(int id) async {

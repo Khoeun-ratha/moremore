@@ -11,6 +11,8 @@ import '../../models/course.dart';
 import '../../models/lesson.dart';
 import '../../models/progress.dart';
 import '../../models/review.dart';
+import '../../state/auth_store.dart';
+import '../../state/learning_events.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/error_view.dart';
 
@@ -33,17 +35,32 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   bool _showCompletedLessons = false;
   bool _loadingCertificate = false;
 
+  late final LearningEvents _events;
+
   @override
   void initState() {
     super.initState();
+    _events = context.read<LearningEvents>()..addListener(_reloadQuietly);
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _events.removeListener(_reloadQuietly);
+    super.dispose();
+  }
+
+  void _reloadQuietly() => _load(silent: true);
+
+  /// [silent] refreshes in place (pull-to-refresh, or progress changing on
+  /// another screen) instead of swapping the page for a full-screen spinner.
+  Future<void> _load({bool silent = false}) async {
+    if (!silent || _course == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final api = context.read<ApiServices>();
       final results = await Future.wait([
@@ -52,17 +69,34 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         api.progress.forCourse(widget.courseId),
         api.courses.getReviews(widget.courseId),
       ]);
+      if (!mounted) return;
       setState(() {
         _course = results[0] as CourseDetail;
         _lessons = results[1] as List<Lesson>;
         _progress = results[2] as CourseProgress;
         _reviews = results[3] as List<Review>;
+        _error = null;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = extractErrorMessage(context, e));
+      if (!mounted) return;
+      if (_course != null && silent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(extractErrorMessage(context, e))),
+        );
+      } else {
+        setState(() => _error = extractErrorMessage(context, e));
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Review? get _myReview {
+    final userId = context.read<AuthStore>().user?.id;
+    for (final review in _reviews ?? const <Review>[]) {
+      if (review.userId == userId) return review;
+    }
+    return null;
   }
 
   List<String> _ratingLabels(String Function(String) tr) => [
@@ -77,8 +111,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final tr = context.trRead;
     final ratingLabels = _ratingLabels(tr);
     final course = _course!;
-    var rating = 5;
-    final commentController = TextEditingController();
+    // The backend keeps one review per learner per course and replaces it on
+    // resubmit, so start from their existing review rather than a blank form
+    // that would silently overwrite it.
+    final existing = _myReview;
+    var rating = existing?.rating ?? 5;
+    final commentController = TextEditingController(
+      text: existing?.comment ?? '',
+    );
 
     final submitted = await showDialog<bool>(
       context: context,
@@ -183,14 +223,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       ),
     );
 
+    final comment = commentController.text.trim();
     if (submitted != true || !mounted) return;
     try {
       await context.read<ApiServices>().courses.submitReview(
         course.id,
         rating: rating,
-        comment: commentController.text.trim(),
+        comment: comment,
       );
-      if (mounted) _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.trRead('reviewSaved'))));
+      context.read<LearningEvents>().progressChanged();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -240,7 +285,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final progress = _progress!;
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(silent: true),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -819,7 +864,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final reviews = _reviews!;
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(silent: true),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -829,8 +874,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ],
           FilledButton.icon(
             onPressed: _openReviewDialog,
-            icon: const Icon(Icons.star_outline),
-            label: Text(tr('writeAReview')),
+            icon: Icon(_myReview == null ? Icons.star_outline : Icons.edit),
+            label: Text(
+              _myReview == null ? tr('writeAReview') : tr('editYourReview'),
+            ),
           ),
           const SizedBox(height: 20),
           if (reviews.isEmpty)

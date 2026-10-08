@@ -28,6 +28,8 @@ class _AdminGameAttemptsScreenState extends State<AdminGameAttemptsScreen> {
   bool _hasMore = false;
   bool _loading = true;
   bool _loadingMore = false;
+  bool _loadMoreFailed = false;
+  int _requestId = 0;
   String? _error;
 
   @override
@@ -43,7 +45,10 @@ class _AdminGameAttemptsScreenState extends State<AdminGameAttemptsScreen> {
   }
 
   Future<void> _load({bool reset = true}) async {
+    // Only the newest request may write results (see course list screen).
+    final requestId = ++_requestId;
     setState(() {
+      _loadMoreFailed = false;
       if (reset) {
         _loading = true;
         _page = 1;
@@ -59,6 +64,7 @@ class _AdminGameAttemptsScreenState extends State<AdminGameAttemptsScreen> {
         page: _page,
       );
       final board = await api.leaderboard(limit: 1);
+      if (!mounted || requestId != _requestId) return;
       setState(() {
         if (reset) {
           _attempts
@@ -71,9 +77,15 @@ class _AdminGameAttemptsScreenState extends State<AdminGameAttemptsScreen> {
         _topPlayer = board.isEmpty ? null : board.first;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = extractErrorMessage(context, e));
+      if (!mounted || requestId != _requestId) return;
+      if (reset) {
+        setState(() => _error = extractErrorMessage(context, e));
+      } else {
+        _page -= 1;
+        setState(() => _loadMoreFailed = true);
+      }
     } finally {
-      if (mounted) {
+      if (mounted && requestId == _requestId) {
         setState(() {
           _loading = false;
           _loadingMore = false;
@@ -83,6 +95,7 @@ class _AdminGameAttemptsScreenState extends State<AdminGameAttemptsScreen> {
   }
 
   Future<void> _loadMore() async {
+    if (_loadingMore) return;
     _page += 1;
     await _load(reset: false);
   }
@@ -187,6 +200,13 @@ class _AdminGameAttemptsScreenState extends State<AdminGameAttemptsScreen> {
             );
           }
           if (i >= _attempts.length) {
+            if (_loadMoreFailed) {
+              return TextButton.icon(
+                onPressed: _loadMore,
+                icon: const Icon(Icons.refresh),
+                label: Text(tr('couldNotLoadMore')),
+              );
+            }
             if (!_loadingMore) {
               WidgetsBinding.instance.addPostFrameCallback((_) => _loadMore());
             }

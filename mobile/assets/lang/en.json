@@ -271,5 +271,14 @@
   "feedbackTypeLessonSuggestion": "Suggest a lesson",
   "feedbackStatusSubmitted": "Submitted",
   "feedbackStatusReviewed": "Reviewed",
-  "feedbackStatusDismissed": "Dismissed"
+  "feedbackStatusDismissed": "Dismissed",
+
+  "reviewSaved": "Thanks! Your review was saved.",
+  "backToLesson": "Back to Lesson",
+  "leaveQuizTitle": "Leave the quiz?",
+  "leaveGameTitle": "Leave this round?",
+  "leaveQuizMessage": "Your answers so far will be lost.",
+  "stay": "Stay",
+  "leave": "Leave",
+  "couldNotLoadMore": "Couldn't load more. Tap to try again."
 }

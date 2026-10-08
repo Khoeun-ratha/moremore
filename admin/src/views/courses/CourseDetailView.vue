@@ -6,6 +6,7 @@ import { ArrowLeft, Delete, Edit, Plus, Reading } from '@element-plus/icons-vue'
 import { getCourse } from '../../api/courses'
 import { deleteLesson, listLessons } from '../../api/lessons'
 import type { CourseDetail, Lesson } from '../../types/api'
+import { extractErrorMessage } from '../../utils/errorMessage'
 
 const props = defineProps<{ courseId: number }>()
 const router = useRouter()
@@ -43,9 +44,21 @@ function manageQuiz(lesson: Lesson) {
 }
 
 async function handleDeleteLesson(lesson: Lesson) {
-  await ElMessageBox.confirm(`Delete lesson "${lesson.title}"?`, 'Confirm', { type: 'warning' })
-  await deleteLesson(lesson.id)
-  ElMessage.success('Lesson deleted')
+  try {
+    await ElMessageBox.confirm(
+      `Delete lesson "${lesson.title}"? Its quiz and learners' progress on it are deleted too.`,
+      'Confirm',
+      { type: 'warning', confirmButtonText: 'Delete', confirmButtonClass: 'el-button--danger' },
+    )
+  } catch {
+    return // cancelled
+  }
+  try {
+    await deleteLesson(lesson.id)
+    ElMessage.success('Lesson deleted')
+  } catch (err) {
+    ElMessage.error(extractErrorMessage(err, 'Could not delete the lesson.'))
+  }
   await load()
 }
 </script>

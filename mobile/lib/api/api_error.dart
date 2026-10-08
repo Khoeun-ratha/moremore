@@ -34,11 +34,14 @@ String extractErrorMessage(BuildContext context, Object error) {
       if (detail is String) return detail;
       if (detail is List && detail.isNotEmpty) {
         final first = detail.first;
-        if (first is Map && first['msg'] is String)
+        if (first is Map && first['msg'] is String) {
           return first['msg'] as String;
+        }
       }
     }
     if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.connectionError) {
       return context.trRead('couldNotReachServer');
     }

@@ -97,10 +97,29 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /** Restore the current-user profile from a persisted token on app startup. */
+    /**
+     * Restore the current-user profile from a persisted token on app startup. Access tokens
+     * only live 45 minutes, so an expired one is refreshed first rather than treated as a
+     * logout — otherwise any page reload after a coffee break bounces the admin to /login.
+     */
     async restoreSession() {
       if (!this.accessToken) return
       try {
+        await this.fetchCurrentUser()
+        return
+      } catch (err) {
+        if (axios.isAxiosError(err) && !err.response) {
+          // Server unreachable: leave the stored session alone so a reload once it's back
+          // restores it; the router sends this visit to /login since there's no profile.
+          return
+        }
+        if (!axios.isAxiosError(err) || err.response?.status !== 401) {
+          await this.logout()
+          return
+        }
+      }
+      try {
+        await this.refresh()
         await this.fetchCurrentUser()
       } catch {
         await this.logout()

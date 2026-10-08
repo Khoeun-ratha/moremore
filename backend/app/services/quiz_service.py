@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.exceptions import AppError
 from app.models.quiz import Question, Quiz, QuizAttempt, QuizAttemptAnswer
 from app.schemas.quiz import AnswerResult, QuizResult, QuizSubmission
-from app.services.progress_service import mark_lesson_complete
+from app.services.progress_service import ensure_lesson_unlocked, mark_lesson_complete
 
 
 def get_quiz_with_questions(db: Session, quiz_id: int) -> Quiz:
@@ -23,6 +23,7 @@ def submit_quiz(db: Session, user_id: int, quiz_id: int, submission: QuizSubmiss
 
     if not quiz.questions:
         raise AppError(400, "Quiz has no questions")
+    ensure_lesson_unlocked(db, user_id=user_id, lesson=quiz.lesson)
 
     answers_by_question = {a.question_id: a.choice_id for a in submission.answers}
 
@@ -99,9 +100,13 @@ def get_attempt_detail(db: Session, user_id: int, attempt_id: int) -> QuizResult
 
     quiz = get_quiz_with_questions(db, attempt.quiz_id)
     correct_choice_by_question = {
-        question.id: next(c.id for c in question.choices if c.is_correct) for question in quiz.questions
+        question.id: correct.id
+        for question in quiz.questions
+        if (correct := next((c for c in question.choices if c.is_correct), None)) is not None
     }
 
+    # Answers to questions an admin has since replaced are gone; show what remains rather
+    # than failing to open the attempt at all.
     answers = [
         AnswerResult(
             question_id=a.question_id,
@@ -110,6 +115,7 @@ def get_attempt_detail(db: Session, user_id: int, attempt_id: int) -> QuizResult
             is_correct=a.is_correct,
         )
         for a in attempt.answers
+        if a.question_id in correct_choice_by_question
     ]
 
     return QuizResult(

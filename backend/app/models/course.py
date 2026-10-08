@@ -19,11 +19,13 @@ class Course(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
+    # id breaks order_index ties so "the lesson before this one" (sequential unlock) is well-defined.
     lessons: Mapped[list["Lesson"]] = relationship(
-        back_populates="course", cascade="all, delete-orphan", order_by="Lesson.order_index"
+        back_populates="course", cascade="all, delete-orphan", order_by="[Lesson.order_index, Lesson.id]"
     )
     certificates: Mapped[list["Certificate"]] = relationship(back_populates="course", cascade="all, delete-orphan")
     reviews: Mapped[list["CourseReview"]] = relationship(back_populates="course", cascade="all, delete-orphan")
+    game_attempts: Mapped[list["GameAttempt"]] = relationship(back_populates="course", cascade="all, delete-orphan")
 
 
 class Lesson(Base):
@@ -40,3 +42,6 @@ class Lesson(Base):
 
     course: Mapped["Course"] = relationship(back_populates="lessons")
     quiz: Mapped["Quiz | None"] = relationship(back_populates="lesson", cascade="all, delete-orphan", uselist=False)
+    progress_entries: Mapped[list["LessonProgress"]] = relationship(
+        back_populates="lesson", cascade="all, delete-orphan"
+    )

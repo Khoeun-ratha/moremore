@@ -35,7 +35,7 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
     });
     try {
       final certificates = await context.read<ApiServices>().certificates.me();
-      setState(() => _certificates = certificates);
+      if (mounted) setState(() => _certificates = certificates);
     } catch (e) {
       if (mounted) setState(() => _error = extractErrorMessage(context, e));
     } finally {

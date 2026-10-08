@@ -33,7 +33,9 @@ class GameResultScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () => context.go('/home'),
+            // Back to Game home (the round itself was replaced by this page).
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/home'),
           ),
         ],
       ),

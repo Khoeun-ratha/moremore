@@ -21,4 +21,4 @@ class GameAttempt(Base):
     submitted_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="game_attempts")
-    course: Mapped["Course | None"] = relationship()
+    course: Mapped["Course | None"] = relationship(back_populates="game_attempts")
