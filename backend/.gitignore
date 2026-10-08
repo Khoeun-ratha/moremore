@@ -7,6 +7,9 @@ media/images/*
 !media/videos/.gitkeep
 !media/pdfs/.gitkeep
 !media/images/.gitkeep
+# Seeded course cover art ships with the image so covers survive Render redeploys
+# (its disk is wiped on every deploy; user uploads go to Cloudinary instead).
+!media/images/seedcover_*
 .pytest_cache/
 *.egg-info/
 .venv/
