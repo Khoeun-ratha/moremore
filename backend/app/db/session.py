@@ -14,6 +14,13 @@ def make_engine(database_url: str, ssl_ca_path: str = ""):
         connect_args = {"ssl": {"ca": ssl_ca_path}}
     elif ssl_ca_path and database_url.startswith("postgresql"):
         connect_args = {"sslmode": "verify-ca", "sslrootcert": ssl_ca_path}
+    if database_url.startswith("postgresql"):
+        # Without a timeout, an unreachable/powered-off database makes `alembic upgrade head`
+        # (run before uvicorn on every deploy) hang forever: the port never opens and the
+        # service just times out with nothing in the log. Fail fast with a real error instead.
+        connect_args["connect_timeout"] = 15
+    elif database_url.startswith("mysql"):
+        connect_args["connect_timeout"] = 15
     eng = create_engine(database_url, connect_args=connect_args, pool_pre_ping=True)
     if database_url.startswith("sqlite"):
         # SQLite ignores foreign keys unless asked per-connection; without this, tests pass on
