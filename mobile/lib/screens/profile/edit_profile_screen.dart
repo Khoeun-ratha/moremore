@@ -145,7 +145,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         : '?';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(title: Text(tr('editProfileTitle'))),
       body: SafeArea(
         child: SingleChildScrollView(

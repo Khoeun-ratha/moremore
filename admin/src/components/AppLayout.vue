@@ -87,10 +87,14 @@ async function handleLogout() {
 
 <style scoped>
 .app-sidebar {
-  background: var(--surface-card);
+  background: var(--surface-glass);
+  backdrop-filter: blur(18px);
   border-right: 1px solid var(--surface-border);
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 .app-sidebar__brand {
@@ -101,10 +105,12 @@ async function handleLogout() {
 }
 
 .app-sidebar__logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-700));
+  box-shadow: 0 6px 16px rgba(108, 76, 240, 0.35);
+  transition: transform 0.4s var(--ease-out);
   color: #fff;
   font-weight: 700;
   font-size: 13px;
@@ -114,6 +120,10 @@ async function handleLogout() {
   flex-shrink: 0;
 }
 
+.app-sidebar__brand:hover .app-sidebar__logo {
+  transform: rotate(-8deg) scale(1.06);
+}
+
 .app-sidebar__brand-text {
   font-weight: 600;
   font-size: 15px;
@@ -121,24 +131,51 @@ async function handleLogout() {
 }
 
 .app-sidebar__menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: rgba(108, 76, 240, 0.07);
   border-right: none;
   padding: 4px 10px;
 }
 
 .app-sidebar__menu :deep(.el-menu-item) {
-  border-radius: 8px;
+  position: relative;
+  border-radius: 10px;
   margin-bottom: 4px;
   gap: 10px;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s var(--ease-out);
+}
+
+.app-sidebar__menu :deep(.el-menu-item:hover) {
+  transform: translateX(3px);
 }
 
 .app-sidebar__menu :deep(.el-menu-item.is-active) {
-  background: var(--brand-50);
+  background: linear-gradient(90deg, rgba(108, 76, 240, 0.16), rgba(108, 76, 240, 0.04));
   color: var(--brand-600);
   font-weight: 600;
 }
 
+.app-sidebar__menu :deep(.el-menu-item.is-active)::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, var(--brand-400), var(--brand-600));
+  animation: indicator-in 0.3s var(--ease-out);
+}
+
+@keyframes indicator-in {
+  from {
+    transform: scaleY(0);
+  }
+}
+
 .app-header {
-  background: var(--surface-card);
+  background: var(--surface-glass);
+  backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--surface-border);
   display: flex;
   align-items: center;
@@ -167,7 +204,7 @@ async function handleLogout() {
 }
 
 .app-header__user:hover {
-  background: var(--surface-bg);
+  background: rgba(108, 76, 240, 0.08);
 }
 
 .app-header__avatar {
@@ -196,6 +233,6 @@ async function handleLogout() {
 }
 
 .app-main {
-  padding: 24px;
+  padding: 24px 28px 40px;
 }
 </style>

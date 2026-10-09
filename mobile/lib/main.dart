@@ -11,6 +11,7 @@ import 'state/auth_store.dart';
 import 'state/learning_events.dart';
 import 'state/locale_store.dart';
 import 'theme/app_theme.dart';
+import 'widgets/animated_app_background.dart';
 
 void main() {
   runApp(const LearningPlatformApp());
@@ -66,14 +67,22 @@ class _AppRootState extends State<_AppRoot> {
     }
 
     if (authStore.isRestoring || !translations.isLoaded) {
-      return MaterialApp(theme: AppTheme.light, home: const SplashScreen());
+      return MaterialApp(
+        theme: AppTheme.light,
+        builder: _withBackground,
+        home: const SplashScreen(),
+      );
     }
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Learning Platform',
       theme: AppTheme.light,
+      builder: _withBackground,
       routerConfig: _router,
     );
   }
 }
+
+Widget _withBackground(BuildContext context, Widget? child) =>
+    AnimatedAppBackground(child: child ?? const SizedBox.shrink());

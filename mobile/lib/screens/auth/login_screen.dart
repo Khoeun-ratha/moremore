@@ -128,7 +128,6 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final tr = context.tr;
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

@@ -142,7 +142,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : '?';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(title: Text(tr('profileTitle'))),
       body: SafeArea(
         top: false,

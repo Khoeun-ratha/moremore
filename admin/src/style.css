@@ -2,25 +2,41 @@
   color-scheme: light;
   font: 14px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  --brand-50: #eef2ff;
-  --brand-100: #e0e7ff;
-  --brand-400: #818cf8;
-  --brand-500: #6366f1;
-  --brand-600: #4f46e5;
-  --brand-700: #4338ca;
+  /* Same purple brand as the mobile app (mobile/lib/theme/app_theme.dart). */
+  --brand-50: #f1eefa;
+  --brand-100: #e4ddfc;
+  --brand-400: #8f75f5;
+  --brand-500: #6c4cf0;
+  --brand-600: #5d3ee6;
+  --brand-700: #4a2fc4;
 
-  --surface-bg: #ffffff;
+  --surface-bg: #f8f7fc;
   --surface-card: #ffffff;
-  --surface-border: #e7e8f2;
-  --text-primary: #1f2333;
-  --text-secondary: #6b7086;
+  /* Translucent surfaces let the animated background glow through. */
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  --surface-glass-strong: rgba(255, 255, 255, 0.86);
+  --surface-border: #e3dff3;
+  --text-primary: #1c1830;
+  --text-secondary: #6b6483;
 
-  --shadow-sm: 0 1px 2px rgba(30, 34, 60, 0.06);
-  --shadow-md: 0 6px 16px rgba(30, 34, 60, 0.08);
-  --shadow-lg: 0 12px 32px rgba(30, 34, 60, 0.12);
+  --shadow-sm: 0 1px 2px rgba(50, 38, 128, 0.06), 0 2px 8px rgba(50, 38, 128, 0.04);
+  --shadow-md: 0 8px 24px rgba(50, 38, 128, 0.1);
+  --shadow-lg: 0 18px 48px rgba(50, 38, 128, 0.16);
 
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Drive every Element Plus component from the brand color. */
+  --el-color-primary: var(--brand-500);
+  --el-color-primary-light-3: #9883f5;
+  --el-color-primary-light-5: #b5a6f7;
+  --el-color-primary-light-7: #d3c9fa;
+  --el-color-primary-light-8: #e2dbfc;
+  --el-color-primary-light-9: #f1eefd;
+  --el-color-primary-dark-2: var(--brand-700);
+  --el-border-radius-base: 10px;
 }
 
 * {
@@ -29,7 +45,8 @@
 
 body {
   margin: 0;
-  background: var(--surface-bg);
+  /* Transparent: AnimatedBackground (App.vue) paints behind every page. */
+  background: transparent;
   color: var(--text-primary);
 }
 
@@ -82,11 +99,17 @@ body {
 }
 
 .surface-card {
-  background: var(--surface-card);
+  background: var(--surface-glass-strong);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 20px;
+  transition: box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out);
+}
+
+.surface-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .toolbar-row {
@@ -104,14 +127,30 @@ body {
 
 .el-card {
   --el-card-border-color: var(--surface-border);
+  --el-card-bg-color: var(--surface-glass-strong);
+  backdrop-filter: blur(14px);
   border-radius: var(--radius-lg) !important;
   box-shadow: var(--shadow-sm) !important;
+  transition: box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out) !important;
+}
+
+.el-card.is-hover-shadow:hover,
+.el-card:hover {
+  box-shadow: var(--shadow-md) !important;
 }
 
 .el-table {
   --el-table-border-color: var(--surface-border);
+  --el-table-bg-color: var(--surface-glass-strong);
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-bg-color: transparent;
+  --el-table-row-hover-bg-color: var(--brand-50);
   border-radius: var(--radius-md);
   overflow: hidden;
+}
+
+.el-table tr {
+  transition: background-color 0.15s ease;
 }
 
 .el-table th.el-table__cell {
@@ -122,17 +161,110 @@ body {
 
 .el-dialog {
   border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.el-overlay {
+  backdrop-filter: blur(4px);
 }
 
 .el-button {
-  border-radius: 8px;
+  border-radius: 10px;
+  transition: transform 0.15s var(--ease-out), box-shadow 0.2s var(--ease-out), background-color 0.2s ease !important;
+}
+
+.el-button:not(.is-disabled):not(.is-link):not(.is-text):hover {
+  transform: translateY(-1px);
+}
+
+.el-button:not(.is-disabled):active {
+  transform: translateY(0) scale(0.98);
 }
 
 .el-button--primary {
-  --el-button-bg-color: var(--brand-600);
-  --el-button-border-color: var(--brand-600);
-  --el-button-hover-bg-color: var(--brand-500);
-  --el-button-hover-border-color: var(--brand-500);
+  --el-button-bg-color: var(--brand-500);
+  --el-button-border-color: var(--brand-500);
+  --el-button-hover-bg-color: var(--brand-600);
+  --el-button-hover-border-color: var(--brand-600);
   --el-button-active-bg-color: var(--brand-700);
   --el-button-active-border-color: var(--brand-700);
+}
+
+.el-button--primary:not(.is-plain):not(.is-link):not(.is-text):not(.is-disabled) {
+  background-image: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+  box-shadow: 0 4px 14px rgba(108, 76, 240, 0.3);
+}
+
+.el-button--primary:not(.is-plain):not(.is-link):not(.is-text):not(.is-disabled):hover {
+  box-shadow: 0 6px 20px rgba(108, 76, 240, 0.4);
+}
+
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  border-radius: 10px !important;
+  transition: box-shadow 0.2s ease !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--brand-500) inset, 0 0 0 4px rgba(108, 76, 240, 0.12) !important;
+}
+
+.el-tag {
+  border-radius: 999px;
+}
+
+.el-pagination {
+  justify-content: flex-end;
+}
+
+/* Page enter/leave (App.vue wraps every routed view in .page-anim). */
+
+.page-enter-active {
+  transition: opacity 0.32s var(--ease-out), transform 0.32s var(--ease-out);
+}
+
+.page-leave-active {
+  transition: opacity 0.14s ease-in, transform 0.14s ease-in;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Staggered rise-in for the cards/tables on each page. */
+.page-anim > * > * {
+  animation: rise-in 0.45s var(--ease-out) both;
+}
+.page-anim > * > *:nth-child(2) { animation-delay: 0.05s; }
+.page-anim > * > *:nth-child(3) { animation-delay: 0.1s; }
+.page-anim > * > *:nth-child(4) { animation-delay: 0.15s; }
+.page-anim > * > *:nth-child(n + 5) { animation-delay: 0.2s; }
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../router/app_page_transition.dart';
+
 /// Shared animation timing so every screen transition, loading fade, and
 /// micro-interaction in the app moves at the same speed — one "standard"
 /// feel instead of each screen picking its own.
@@ -60,7 +62,17 @@ class AppTheme {
     final base = ThemeData(useMaterial3: true, colorScheme: colorScheme);
 
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.background,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.macOS: FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeThroughPageTransitionsBuilder(),
+        },
+      ),
+      // Transparent so the app-wide AnimatedAppBackground shows through.
+      scaffoldBackgroundColor: Colors.transparent,
       canvasColor: AppColors.background,
       dividerColor: AppColors.border,
       textTheme: base.textTheme.apply(
@@ -68,7 +80,8 @@ class AppTheme {
         displayColor: AppColors.textPrimary,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         foregroundColor: AppColors.textPrimary,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -80,13 +93,56 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: 0,
+        color: AppColors.surface.withValues(alpha: 0.94),
+        elevation: 4,
         margin: EdgeInsets.zero,
         shadowColor: AppColors.shadow,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AppColors.border.withValues(alpha: 0.7)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surface.withValues(alpha: 0.85),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.danger),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.8),
+        ),
+        prefixIconColor: AppColors.textMuted,
+        suffixIconColor: AppColors.textMuted,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -96,8 +152,10 @@ class AppTheme {
           disabledBackgroundColor: AppColors.surfaceHigh,
           disabledForegroundColor: AppColors.textMuted,
           minimumSize: const Size.fromHeight(52),
+          elevation: 3,
+          shadowColor: AppColors.primary.withValues(alpha: 0.35),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
@@ -106,10 +164,11 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
           disabledForegroundColor: AppColors.textMuted,
+          backgroundColor: AppColors.surface.withValues(alpha: 0.7),
           side: const BorderSide(color: AppColors.border, width: 1.5),
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
@@ -136,8 +195,8 @@ class AppTheme {
         textColor: AppColors.textPrimary,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+        backgroundColor: AppColors.surface.withValues(alpha: 0.92),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
         surfaceTintColor: Colors.transparent,
         elevation: 3,
         shadowColor: AppColors.shadow,
@@ -156,10 +215,12 @@ class AppTheme {
           );
         }),
       ),
-      snackBarTheme: const SnackBarThemeData(
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         backgroundColor: AppColors.textPrimary,
-        contentTextStyle: TextStyle(color: Colors.white),
-        actionTextColor: AppColors.primaryHigh,
+        contentTextStyle: const TextStyle(color: Colors.white),
+        actionTextColor: const Color(0xFFB9A8FF),
       ),
     );
   }

@@ -115,7 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final initial = firstName.isEmpty ? 'U' : firstName[0].toUpperCase();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(

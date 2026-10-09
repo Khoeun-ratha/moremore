@@ -121,7 +121,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     final tr = context.tr;
     final translations = context.watch<Translations>();
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(title: Text(tr('feedbackTitle'))),
       body: SafeArea(
         child: RefreshIndicator(

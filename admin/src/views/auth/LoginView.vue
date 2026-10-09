@@ -86,28 +86,35 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(129, 140, 248, 0.25), transparent 45%),
-    radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.2), transparent 45%),
-    var(--surface-bg);
   padding: 24px;
 }
 
 .login-card {
   width: 100%;
-  max-width: 380px;
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-lg);
+  max-width: 400px;
+  background: var(--surface-glass-strong);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
   box-shadow: var(--shadow-lg);
-  padding: 36px 32px 28px;
+  padding: 40px 34px 30px;
+  animation: card-in 0.6s var(--ease-out) both;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
 }
 
 .login-card__logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-700));
+  box-shadow: 0 10px 24px rgba(108, 76, 240, 0.4);
+  animation: logo-float 4s ease-in-out infinite;
   color: #fff;
   font-weight: 700;
   font-size: 16px;
@@ -115,6 +122,12 @@ async function handleSubmit() {
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
+}
+
+@keyframes logo-float {
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 .login-card__title {
@@ -132,7 +145,9 @@ async function handleSubmit() {
 
 .login-card__submit {
   width: 100%;
-  margin-top: 4px;
+  margin-top: 8px;
+  height: 46px;
+  font-weight: 600;
 }
 
 .login-card__legal-links {
