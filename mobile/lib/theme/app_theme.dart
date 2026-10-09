@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../router/app_page_transition.dart';
 
@@ -44,6 +45,14 @@ class AppColors {
 class AppTheme {
   AppTheme._();
 
+  /// See-through status bar with dark icons, so the animated background runs
+  /// edge to edge and the clock/battery stay legible on it.
+  static const statusBarStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+  );
+
   static ThemeData get light {
     const colorScheme = ColorScheme(
       brightness: Brightness.light,
@@ -57,6 +66,7 @@ class AppTheme {
       onSurface: AppColors.textPrimary,
       surfaceContainerHighest: AppColors.surfaceHigh,
       outline: AppColors.border,
+      outlineVariant: AppColors.border,
     );
 
     final base = ThemeData(useMaterial3: true, colorScheme: colorScheme);
@@ -75,11 +85,17 @@ class AppTheme {
       scaffoldBackgroundColor: Colors.transparent,
       canvasColor: AppColors.background,
       dividerColor: AppColors.border,
+      dividerTheme: const DividerThemeData(
+        color: AppColors.border,
+        thickness: 1,
+        space: 1,
+      ),
       textTheme: base.textTheme.apply(
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
       appBarTheme: const AppBarTheme(
+        systemOverlayStyle: AppTheme.statusBarStyle,
         backgroundColor: Colors.transparent,
         scrolledUnderElevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -152,6 +168,7 @@ class AppTheme {
           disabledBackgroundColor: AppColors.surfaceHigh,
           disabledForegroundColor: AppColors.textMuted,
           minimumSize: const Size.fromHeight(52),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           elevation: 3,
           shadowColor: AppColors.primary.withValues(alpha: 0.35),
           shape: RoundedRectangleBorder(
@@ -167,6 +184,7 @@ class AppTheme {
           backgroundColor: AppColors.surface.withValues(alpha: 0.7),
           side: const BorderSide(color: AppColors.border, width: 1.5),
           minimumSize: const Size.fromHeight(52),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),

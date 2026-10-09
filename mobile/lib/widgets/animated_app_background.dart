@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
 
@@ -51,7 +52,11 @@ class _AnimatedAppBackgroundState extends State<AnimatedAppBackground>
         RepaintBoundary(
           child: CustomPaint(painter: _BackdropPainter(_controller)),
         ),
-        widget.child,
+        // Screens without an AppBar (home, login) still get a legible status bar.
+        AnnotatedRegion<SystemUiOverlayStyle>(
+          value: AppTheme.statusBarStyle,
+          child: widget.child,
+        ),
       ],
     );
   }

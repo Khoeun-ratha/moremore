@@ -349,7 +349,10 @@ class _QuizScreenState extends State<QuizScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _currentIndex == 0 ? null : _goPrevious,
-                    child: Text(tr('previous')),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(tr('previous'), maxLines: 1),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

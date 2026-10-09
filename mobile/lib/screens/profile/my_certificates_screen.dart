@@ -63,7 +63,39 @@ class _MyCertificatesScreenState extends State<MyCertificatesScreen> {
 
     final certificates = _certificates!;
     if (certificates.isEmpty) {
-      return Center(child: Text(tr('completeToEarnCertificate')));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warning.withValues(alpha: 0.14),
+                ),
+                child: const Icon(
+                  Icons.workspace_premium_outlined,
+                  size: 48,
+                  color: AppColors.warning,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                tr('completeToEarnCertificate'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  height: 1.4,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return RefreshIndicator(
